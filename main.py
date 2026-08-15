@@ -48,7 +48,7 @@ def main(page: ft.Page):
                 controls=[
                 ft.Container(expand=1),
                 ft.Image(
-                    src="TP-Programacion-Tienda-de-Ropa/Imagenes/nova_prestige_logo_letras.png",
+                    src="Imagenes/nova_prestige_logo_letras.png",
                     height= 300,
                     width = 300, 
                     fit=ft.BoxFit.CONTAIN,
@@ -137,7 +137,7 @@ def main(page: ft.Page):
                             controls=[
                                 ft.Container(
                                 content=ft.Image(
-                                    src="TP-Programacion-Tienda-de-Ropa/Imagenes/nova_prestige_logo.png",
+                                    src="Imagenes/nova_prestige_logo.png",
                                     fit=ft.BoxFit.CONTAIN,
                                     color=ft.Colors.WHITE,
                                     color_blend_mode=ft.BlendMode.SRC_IN,
