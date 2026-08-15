@@ -1,130 +1,70 @@
 import flet as ft
 
-BG = "#AEAEAE"
-CARD = "#808080"
-DARK = "#222222"
-
 def main(page: ft.Page):
-    page.bgcolor = BG
-    page.padding = 30
-    page.window_width = 1400
-    page.window_height = 900
+    page.title = "Login y Registro con Animación"
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    sidebar = ft.Container(
-        width=85,
-        bgcolor=DARK,
-        border_radius=25,
-        padding=20,
-        content=ft.Column(
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.Column(
-                    controls=[
-                        ft.Icon(ft.Icons.AC_UNIT, color="white"),
-                        ft.Divider(color="#555"),
-                        ft.Icon(ft.Icons.HOME, color="white70"),
-                        ft.Icon(ft.Icons.PUBLIC, color="white70"),
-                        ft.Icon(ft.Icons.STAR_BORDER, color="white70"),
-                        ft.Icon(ft.Icons.SHARE, color="white70"),
-                    ]
-                ),
-                ft.Icon(ft.Icons.SETTINGS, color="white70")
-            ]
-        )
+    # 1. Vista de Iniciar Sesión
+    vista_login = ft.Container(
+        content=ft.Column([
+            ft.Text("Iniciar Sesión", size=20, weight=ft.FontWeight.BOLD),
+            ft.TextField(label="Correo electrónico"),
+            ft.TextField(label="Contraseña", password=True),
+            ft.ElevatedButton("Entrar"),
+            ft.Divider(),
+            ft.TextButton(
+                "¿No tienes cuenta? Regístrate aquí",
+                on_click=lambda e: cambiar_vista(1)
+            )
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+        alignment=ft.Alignment.CENTER,
+        padding=20
     )
 
-    login = ft.Container(
-        expand=True,
-        bgcolor=CARD,
-        border_radius=30,
-        padding=60,
-        shadow=ft.BoxShadow(
-            blur_radius=40,
-            spread_radius=0,
-            color="#868686",
-            offset=ft.Offset(8, 8),
-        ),
-        content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.Container(
-                    width=70,
-                    height=70,
-                    bgcolor=DARK,
-                    border_radius=35,
-                    content=ft.Icon(ft.Icons.AC_UNIT,
-                                    color="white")
-                ),
-
-                ft.Text(
-                    "Reagle",
-                    size=40,
-                    weight=ft.FontWeight.W_600,
-                ),
-
-                ft.Text(
-                    "All Your Workflows, One Place",
-                    color="grey"
-                ),
-
-                ft.Container(height=25),
-
-                ft.TextField(
-                    label="Email",
-                    width=500,
-                    border_radius=15,
-                    filled=True,
-                    bgcolor="#A3A3A3",
-                    border_color="transparent",
-                    prefix_icon=ft.Icons.PERSON,
-                ),
-
-                ft.Container(height=10),
-
-                ft.TextField(
-                    label="Password",
-                    password=True,
-                    can_reveal_password=True,
-                    width=500,
-                    border_radius=15,
-                    filled=True,
-                    bgcolor="#EFEFEF",
-                    border_color="transparent",
-                    prefix_icon=ft.Icons.LOCK,
-                ),
-
-                ft.Container(height=25),
-
-                ft.ElevatedButton(
-                    "Sign In",
-                    width=500,
-                    height=55,
-                    style=ft.ButtonStyle(
-                        bgcolor=DARK,
-                        color="white",
-                        shape=ft.RoundedRectangleBorder(radius=15)
-                    )
-                ),
-
-                ft.Container(height=20),
-
-
-
-                ft.Container(height=20),
-
-            ]
-        )
+    # 2. Vista de Registrarse
+    vista_registro = ft.Container(
+        content=ft.Column([
+            ft.Text("Crea una cuenta nueva", size=20, weight=ft.FontWeight.BOLD),
+            ft.TextField(label="Nombre completo"),
+            ft.TextField(label="Correo electrónico"),
+            ft.TextField(label="Contraseña", password=True),
+            ft.ElevatedButton("Registrarse"),
+            ft.Divider(),
+            ft.TextButton(
+                "¿Ya tienes cuenta? Inicia sesión",
+                on_click=lambda e: cambiar_vista(0)
+            )
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+        alignment=ft.Alignment.CENTER,
+        padding=20
     )
 
-    page.add(
-        ft.Row(
-            expand=True,
-            controls=[
-                sidebar,
-                login
-            ]
-        )
+    # 3. AnimatedSwitcher para manejar la transición suave entre vistas
+    transicion_vista = ft.AnimatedSwitcher(
+        content=vista_login,
+        duration=400, # Duración de la animación en milisegundos
+        transition=ft.AnimatedSwitcherTransition.SCALE, # Tipo de transición (FADE o SCALE)
+        reverse_duration=200,
+        switch_in_curve=ft.AnimationCurve.EASE_OUT,
+        switch_out_curve=ft.AnimationCurve.EASE_IN,
     )
 
-ft.app(main)
+    # Contenedor principal que envuelve al switcher
+    contenedor_principal = ft.Container(
+        content=transicion_vista, 
+        expand=True, 
+        alignment=ft.Alignment.CENTER
+    )
+
+    # Función para alternar las vistas de manera animada
+    def cambiar_vista(indice):
+        if indice == 0:
+            transicion_vista.content = vista_login
+        else:
+            transicion_vista.content = vista_registro
+        transicion_vista.update() # Actualizamos el switcher para ejecutar la animación
+
+    page.add(contenedor_principal)
+
+ft.app(target=main)

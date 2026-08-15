@@ -41,6 +41,7 @@ def main(page: ft.Page):
                 ),
                 ],
             )
+
     contenido_login = ft.Column(
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
@@ -49,8 +50,8 @@ def main(page: ft.Page):
                 ft.Container(expand=1),
                 ft.Image(
                     src="Imagenes/nova_prestige_logo_letras.png",
-                    height= 300,
-                    width = 300, 
+                    height= 350,
+                    width = 350, 
                     fit=ft.BoxFit.CONTAIN,
                     color="#2b2b2c",
                     color_blend_mode=ft.BlendMode.SRC_IN,
@@ -67,7 +68,6 @@ def main(page: ft.Page):
             entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
                                     color=ft.Colors.GREY_800, 
                                     )),
-            
             ft.Container(
                 content=ft.TextButton(
                     content=ft.Row(
@@ -116,8 +116,6 @@ def main(page: ft.Page):
             ],
             
         )
-
-
     barra_lateral=ft.Container(
         width=85,
         bgcolor="#c2c2c2",
