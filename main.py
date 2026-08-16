@@ -1,13 +1,7 @@
 import flet as ft
 
-
-def main(page: ft.Page):
-    page.bgcolor= "#b6b6b4"
-    page.padding = 30
-    page.window.min_height=700
-    page.window.min_width = 700
-
-    def entry_datos(boolean, texto, icono):
+# Configuración de los entradas de texto con iconos y estilos personalizados
+def entry_datos(boolean, texto, icono):
         return ft.Container(
                 content=ft.TextField(
                     width=800,
@@ -42,7 +36,26 @@ def main(page: ft.Page):
                 ],
             )
 
-    contenido_login = ft.Column(
+def main(page: ft.Page):
+    page.bgcolor= "#b6b6b4"
+    page.padding = 30
+    page.window.min_height= 500
+    page.window.min_width = 700
+
+    contenido_registro = ft.Column(
+          ft.Row(
+            alignment=ft.MainAxisAlignment.CENTER,
+            controls=[
+                ft.Text("¿Ya estas registrado?", 
+                    color=ft.Colors.GREY_800),
+                    ft.TextButton("Iniciar sesión", 
+                    style=ft.TextStyle(color=ft.Colors.BLACK),
+                    on_click=lambda e: cambiar_vista(0))
+                    ],
+                )
+    )
+
+    contenido_ingreso = ft.Column(
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             ft.Row(
@@ -110,12 +123,14 @@ def main(page: ft.Page):
                     ft.Text("¿Todavía no tenes una cuenta?", 
                             color=ft.Colors.GREY_800),
                     ft.TextButton("Registrarse", 
-                            style=ft.TextStyle(color=ft.Colors.BLACK))
+                            style=ft.TextStyle(color=ft.Colors.BLACK),
+                            on_click=lambda e: cambiar_vista(1))
                 ],
             )
             ],
             
         )
+
     barra_lateral=ft.Container(
         width=85,
         bgcolor="#c2c2c2",
@@ -200,9 +215,26 @@ def main(page: ft.Page):
               ]
         )
     )
+
+    transicion_contenido = ft.AnimatedSwitcher(
+            content=contenido_ingreso,
+            duration=400, 
+            transition=ft.AnimatedSwitcherTransition.SCALE,
+            reverse_duration=200,
+            switch_in_curve=ft.AnimationCurve.EASE_OUT,
+            switch_out_curve=ft.AnimationCurve.EASE_IN,
+        )
+
+    def cambiar_vista(indice):
+            if indice == 0:
+                transicion_contenido.content = contenido_ingreso
+            elif indice == 1:
+                transicion_contenido.content = contenido_registro
+            transicion_contenido.update()
+    
     pantalla_central=ft.Container(
         alignment=ft.Alignment.CENTER,
-        content=contenido_login,
+        content=transicion_contenido,
         expand=True,
         bgcolor="#c2c2c2",
         border_radius=15,
