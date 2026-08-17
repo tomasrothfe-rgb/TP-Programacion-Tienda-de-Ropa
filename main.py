@@ -9,6 +9,7 @@ conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
 cursor = conexion.cursor()
 cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
 nombre TEXT UNIQUE NOT NULL, 
+email TEXT UNIQUE NOT NULL,
 contraseña TEXT NOT NULL, 
 rol TEXT NOT NULL)'''
 )
@@ -81,6 +82,7 @@ def entry_datos(boolean, texto, icono):
                 ],
             )
 
+# Definicion del estilo de boton
 def boton_ingresar(texto, booleano):
     return ft.Container(
         content=ft.TextButton(
@@ -142,6 +144,31 @@ def main(page: ft.Page):
     page.padding = 30
     page.window.min_height= 500
     page.window.min_width = 700
+        
+    entry_admin= ft.TextField(
+                        width=800,
+                        prefix_icon=ft.Icon(ft.Icons.ADMIN_PANEL_SETTINGS, 
+                                                                color=ft.Colors.GREY_800,
+                                        ),
+                        text_style=ft.TextStyle(
+                            color=ft.Colors.GREY_800
+                        ),
+                        hint_text="Ingrese la clave de administrador",
+                        hint_style=ft.TextStyle(
+                            color=ft.Colors.GREY_800,
+                            ),
+                        password=True, 
+                        border_color=ft.Colors.TRANSPARENT,
+                        can_reveal_password=True,
+                        disabled=True
+                        )
+
+    def desactivar_entry(e):
+            entry_admin.disabled=not e.control.value
+            if not e.control.value:
+                entry_admin.value = ""
+            entry_admin.update()
+
 
     contenido_registro = ft.Column(
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -157,10 +184,31 @@ def main(page: ft.Page):
             entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
                                     color=ft.Colors.GREY_800,
                                     )),
-            entry_datos(True,"Ingrese la clave de administrador",ft.Icon(ft.Icons.LOCK_OUTLINE, 
-                                                            color=ft.Colors.GREY_800,
-                                                             
-                                                            )),
+            ft.Checkbox(
+                 label="Desea ingresar como administrador?",
+                 value=False,
+                 on_change= desactivar_entry
+            ),
+            ft.Container(
+                    content=entry_admin,
+                    bgcolor="#bfbfbe",
+                    border_radius=15,
+                    border=ft.Border.all(1, "#a0a0a0"),  
+                    shadow=[
+                        ft.BoxShadow(
+                        blur_radius=2,
+                        spread_radius=0,
+                        color=ft.Colors.WHITE,
+                        offset=ft.Offset(-1, -1), 
+                    ),
+                        ft.BoxShadow(
+                        blur_radius=2,
+                        spread_radius=0,
+                        color=ft.Colors.with_opacity(0.4, ft.Colors.BLACK),
+                        offset=ft.Offset(1, 1),  
+                    ),
+                    ],
+                ),
             boton_ingresar("Registrarse", True),
             ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
@@ -180,7 +228,7 @@ def main(page: ft.Page):
         controls=[
             imagen_inicio(),
             ft.Text("Novus Prestige | El arte de la elegancia", color=ft.Colors.GREY_800),
-            entry_datos(False,"Ingrese su nombre de usuario",ft.Icon(ft.Icons.PERSON_2_OUTLINED, 
+            entry_datos(False,"Ingrese su correo electrónico",ft.Icon(ft.Icons.PERSON_2_OUTLINED, 
                                     color=ft.Colors.GREY_800, 
                                     )),
             entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
