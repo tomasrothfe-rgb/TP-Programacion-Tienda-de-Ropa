@@ -165,8 +165,7 @@ def main(page: ft.Page):
 
     def desactivar_entry(e):
             entry_admin.disabled=not e.control.value
-            if not e.control.value:
-                entry_admin.value = ""
+            entry_admin.value = ""
             entry_admin.update()
 
 
@@ -185,9 +184,11 @@ def main(page: ft.Page):
                                     color=ft.Colors.GREY_800,
                                     )),
             ft.Checkbox(
-                 label="Desea ingresar como administrador?",
+                 label=ft.Text("Desea ingresar como administrador?", color=ft.Colors.GREY_800),
                  value=False,
-                 on_change= desactivar_entry
+                 on_change= desactivar_entry,
+                 border_side=ft.BorderSide(0.3,color=ft.Colors.GREY_800)
+
             ),
             ft.Container(
                     content=entry_admin,
