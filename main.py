@@ -1,4 +1,49 @@
 import flet as ft
+import sqlite3 as sql
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+# Conexion con la bd y creacion de tablas
+conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
+cursor = conexion.cursor()
+cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
+nombre TEXT UNIQUE NOT NULL, 
+contraseña TEXT NOT NULL, 
+rol TEXT NOT NULL)'''
+)
+
+# Clase Usuario
+class Usuario():
+    def __init__(self, nombre, contraseña, email,rol):
+        self.nombre=nombre
+        self.contraseña=contraseña
+        self.email = email
+        self.rol=rol
+
+# Funcion para comprobar si un usuario existe
+def comprobar_usuarios(nombre):
+    cursor.execute("SELECT * FROM usuarios WHERE nombre = ?", (nombre,))
+    fila = cursor.fetchone()
+    if fila:
+        logging.info("Se encontro el usuario, procediendo a devolver los datos como una instancia de la clase Usuario")
+        return Usuario(nombre=fila[0], contraseña=fila[1], rol=fila[2])
+    else:
+        logging.info("El usuario no existe en la base de datos")
+        return None
+
+# Funcion para insertar nuevos usuarios a la base de datos
+def ingresar_usuarios(nombre, contraseña, rol):
+    cursor.execute("INSERT INTO usuarios VALUES (?, ?, ?)",(nombre, contraseña, rol))
+    logging.info(f"Se insterto el usuario {nombre} a la base de datos")
+    conexion.commit()
+
+# Funcion para corroborar ingreso y entrar a la pagina de la tienda
+def ingresar_tienda(booleano):
+    if booleano == True:
+         logging.info("Modo Registro")
+    else:
+         logging.info("Modo Ingreso")
 
 # Configuración de los entradas de texto con iconos y estilos personalizados
 def entry_datos(boolean, texto, icono):
@@ -36,7 +81,7 @@ def entry_datos(boolean, texto, icono):
                 ],
             )
 
-def boton_ingresar(texto):
+def boton_ingresar(texto, booleano):
     return ft.Container(
         content=ft.TextButton(
             content=ft.Row(
@@ -59,7 +104,8 @@ def boton_ingresar(texto):
                 ],
                 alignment=ft.Alignment.CENTER
             ), 
-            expand=True),
+            expand=True,
+            on_click= lambda e: ingresar_tienda(booleano)),
         width=800,
         height=60,
         bgcolor="#2b2b2c",
@@ -115,7 +161,7 @@ def main(page: ft.Page):
                                                             color=ft.Colors.GREY_800,
                                                              
                                                             )),
-            boton_ingresar("Registrarse"),
+            boton_ingresar("Registrarse", True),
             ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
@@ -140,7 +186,7 @@ def main(page: ft.Page):
             entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
                                     color=ft.Colors.GREY_800, 
                                     )),
-            boton_ingresar("Ingresar"),
+            boton_ingresar("Ingresar", False),
             ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 controls=[
@@ -193,6 +239,7 @@ def main(page: ft.Page):
                                     color=ft.Colors.WHITE, 
                                     ),
                                     tooltip= "Inicio",
+                                    on_click=lambda e: cambiar_vista(2)
                                     ),
                                 ft.IconButton(icon=ft.Icon(ft.Icons.LOGIN, 
                                     color=ft.Colors.WHITE),
@@ -230,6 +277,7 @@ def main(page: ft.Page):
                                 color=ft.Colors.WHITE, 
                                 ),
                                 tooltip= "Configuración",
+                                on_click=lambda e: cambiar_vista(3)
                                 ),
                         bgcolor="#2b2b2c",
                         padding=10,
@@ -257,9 +305,16 @@ def main(page: ft.Page):
 
     def cambiar_vista(indice):
             if indice == 0:
+                logging.info("Se cambia la vista de pagina a la de ingreso")
                 transicion_contenido.content = contenido_ingreso
             elif indice == 1:
+                logging.info("Se cambia la vista de pagina a la de registro")
                 transicion_contenido.content = contenido_registro
+            elif indice == 2:
+                logging.info("Se cambia la vista de pagina a la de informacion/inicio")
+            else:
+                logging.info("Se cambia la vista de pagina a la de configuracion")
+
             transicion_contenido.update()
     
     pantalla_central=ft.Container(
