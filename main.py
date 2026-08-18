@@ -2,45 +2,18 @@ import flet as ft
 import sqlite3 as sql
 import logging
 
+from conexion_bd import creacion_bd, comprobar_usuarios, ingresar_usuarios, ingresar_manual
+from clases import Usuario
+
 logging.basicConfig(level=logging.INFO)
 
-# Conexion con la bd y creacion de tablas
-conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
-cursor = conexion.cursor()
-cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-nombre TEXT UNIQUE NOT NULL, 
-email TEXT UNIQUE NOT NULL,
-contraseña TEXT NOT NULL, 
-rol TEXT NOT NULL)'''
-)
-
-# Clase Usuario
-class Usuario():
-    def __init__(self, nombre, contraseña, email,rol):
-        self.nombre=nombre
-        self.contraseña=contraseña
-        self.email = email
-        self.rol=rol
-
-# Funcion para comprobar si un usuario existe
-def comprobar_usuarios(nombre):
-    cursor.execute("SELECT * FROM usuarios WHERE nombre = ?", (nombre,))
-    fila = cursor.fetchone()
-    if fila:
-        logging.info("Se encontro el usuario, procediendo a devolver los datos como una instancia de la clase Usuario")
-        return Usuario(nombre=fila[0], contraseña=fila[1], rol=fila[2])
-    else:
-        logging.info("El usuario no existe en la base de datos")
-        return None
-
-# Funcion para insertar nuevos usuarios a la base de datos
-def ingresar_usuarios(nombre, contraseña, rol):
-    cursor.execute("INSERT INTO usuarios VALUES (?, ?, ?)",(nombre, contraseña, rol))
-    logging.info(f"Se insterto el usuario {nombre} a la base de datos")
-    conexion.commit()
+creacion_bd()
+ingresar_manual()
 
 # Funcion para corroborar ingreso y entrar a la pagina de la tienda
 def ingresar_tienda(booleano):
+    posible_usuario = comprobar_usuarios("Tomas Roth")
+    logging.info(f"La funcion devolvio {posible_usuario}")
     if booleano == True:
          logging.info("Modo Registro")
     else:
@@ -121,23 +94,24 @@ def boton_ingresar(texto, booleano):
             offset=ft.Offset(0, 5),
         )
         )
+
 def imagen_inicio():
-      return ft.Row(
-                      controls=[
-                      ft.Container(expand=1),
-                      ft.Image(
-                          src="Imagenes/nova_prestige_logo_letras.png",
-                          height= 350,
-                          width = 350, 
-                          fit=ft.BoxFit.CONTAIN,
-                          color="#2b2b2c",
-                          color_blend_mode=ft.BlendMode.SRC_IN,
-                          expand=10
-                      ),
-                      ft.Container(expand=1),
-                      ],
-                      expand=1
-                  )
+    return ft.Row(
+        controls=[
+            ft.Container(expand=1),
+            ft.Image(
+                src="Imagenes/nova_prestige_logo_letras.png",
+                height= 350,
+                width = 350, 
+                fit=ft.BoxFit.CONTAIN,
+                color="#2b2b2c",
+                color_blend_mode=ft.BlendMode.SRC_IN,
+                expand=10
+                ),
+            ft.Container(expand=1),
+            ],
+        expand=1
+        )
 
 def main(page: ft.Page):
     page.bgcolor= "#b6b6b4"
