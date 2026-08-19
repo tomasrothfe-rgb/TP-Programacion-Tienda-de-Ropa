@@ -8,7 +8,7 @@ from clases import Usuario
 logging.basicConfig(level=logging.INFO)
 
 creacion_bd()
-ingresar_manual()
+
 
 # Funcion para corroborar ingreso y entrar a la pagina de la tienda
 def ingresar_tienda(booleano):
