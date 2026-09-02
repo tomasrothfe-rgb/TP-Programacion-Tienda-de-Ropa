@@ -1,23 +1,15 @@
 import flet as ft
 
+def datos(campo):
+    hola = campo.value
+    print(hola)
+
 def main(page: ft.Page):
-    # Crear el TextField deshabilitado por defecto
-    mi_textfield = ft.TextField(label="Escribe algo...", disabled=True)
+    entry1 = ft.TextField(value="hola")
+    entry2 = ft.TextField(value="hola")
+    button1 = ft.TextButton(content="Enviar",
+                             on_click=lambda e: datos(entry1))
 
-    # Función que se ejecuta al cambiar el estado del Checkbox
-    def checkbox_changed(e):
-        # El TextField toma el valor contrario al del checkbox en 'disabled'
-        # Si el checkbox está marcado (True), disabled será False (activo)
-        mi_textfield.disabled = not e.control.value
-        mi_textfield.update()
-
-    # Crear el Checkbox con el evento on_change
-    mi_checkbox = ft.Checkbox(
-        label="Habilitar campo de texto", 
-        value=False, 
-        on_change=checkbox_changed
-    )
-
-    page.add(mi_checkbox, mi_textfield)
+    page.add(ft.Column(controls=[entry1, entry2, button1]))
 
 ft.app(target=main)

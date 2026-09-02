@@ -15,8 +15,9 @@ def creacion_bd():
     )
 
 # Funcion para comprobar si un usuario existe
-def comprobar_usuarios(nombre):
-    cursor.execute("SELECT * FROM usuarios WHERE nombre = ?", (nombre,))
+def comprobar_usuarios(email):
+    logging.info(f"Se recibio {email}")
+    cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
     fila = cursor.fetchone()
     if fila:
         logging.info("Se encontro el usuario, procediendo a devolver los datos como un arreglo")

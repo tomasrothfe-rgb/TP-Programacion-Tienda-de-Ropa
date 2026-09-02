@@ -9,16 +9,6 @@ logging.basicConfig(level=logging.INFO)
 
 creacion_bd()
 
-
-# Funcion para corroborar ingreso y entrar a la pagina de la tienda
-def ingresar_tienda(booleano):
-    posible_usuario = comprobar_usuarios("Tomas Roth")
-    logging.info(f"La funcion devolvio {posible_usuario}")
-    if booleano == True:
-         logging.info("Modo Registro")
-    else:
-         logging.info("Modo Ingreso")
-
 # Configuración de los entradas de texto con iconos y estilos personalizados
 def entry_datos(boolean, texto, icono):
         return ft.Container(
@@ -55,45 +45,6 @@ def entry_datos(boolean, texto, icono):
                 ],
             )
 
-# Definicion del estilo de boton
-def boton_ingresar(texto, booleano):
-    return ft.Container(
-        content=ft.TextButton(
-            content=ft.Row(
-                controls=[
-                   ft.Container(
-                        content=ft.Text(texto,
-                            color=ft.Colors.WHITE,
-                           ),
-                        expand=1,
-                        alignment=ft.Alignment.CENTER_RIGHT
-                   ),
-                   ft.Container(
-                        content=ft.Icon(ft.Icons.ARROW_RIGHT_ALT_SHARP,
-                            color=ft.Colors.WHITE,
-                            ),
-                        expand=1,
-                        alignment=ft.Alignment.CENTER_RIGHT
-                    ),
-                
-                ],
-                alignment=ft.Alignment.CENTER
-            ), 
-            expand=True,
-            on_click= lambda e: ingresar_tienda(booleano)),
-        width=800,
-        height=60,
-        bgcolor="#2b2b2c",
-        border_radius=15,
-        border=ft.Border.all(1, "#a0a0a0"),  
-        shadow=
-            ft.BoxShadow(
-            blur_radius=10,
-            spread_radius=1,
-            color=ft.Colors.with_opacity(0.3,ft.Colors.BLACK),
-            offset=ft.Offset(0, 5),
-        )
-        )
 
 def imagen_inicio():
     return ft.Row(
@@ -118,7 +69,56 @@ def main(page: ft.Page):
     page.padding = 30
     page.window.min_height= 500
     page.window.min_width = 700
-        
+
+        # Funcion para corroborar ingreso y entrar a la pagina de la tienda
+    def ingresar_tienda(booleano):
+            posible_usuario = comprobar_usuarios(entry_correo_electronico.content.value)
+            logging.info(f"La funcion devolvio {posible_usuario}")
+            if booleano == True:
+                logging.info("Modo Registro")
+            else:
+                logging.info("Modo Ingreso")
+
+        # Definicion del estilo de boton
+    def boton_ingresar(texto, booleano):
+        return ft.Container(
+            content=ft.TextButton(
+                content=ft.Row(
+                    controls=[
+                    ft.Container(
+                            content=ft.Text(texto,
+                                color=ft.Colors.WHITE,
+                            ),
+                            expand=1,
+                            alignment=ft.Alignment.CENTER_RIGHT
+                    ),
+                    ft.Container(
+                            content=ft.Icon(ft.Icons.ARROW_RIGHT_ALT_SHARP,
+                                color=ft.Colors.WHITE,
+                                ),
+                            expand=1,
+                            alignment=ft.Alignment.CENTER_RIGHT
+                        ),
+                    
+                    ],
+                    alignment=ft.Alignment.CENTER
+                ), 
+                expand=True,
+                on_click= lambda e: ingresar_tienda(booleano)),
+            width=800,
+            height=60,
+            bgcolor="#2b2b2c",
+            border_radius=15,
+            border=ft.Border.all(1, "#a0a0a0"),  
+            shadow=
+                ft.BoxShadow(
+                blur_radius=10,
+                spread_radius=1,
+                color=ft.Colors.with_opacity(0.3,ft.Colors.BLACK),
+                offset=ft.Offset(0, 5),
+            )
+            )
+
     entry_admin= ft.TextField(
                         width=800,
                         prefix_icon=ft.Icon(ft.Icons.ADMIN_PANEL_SETTINGS, 
@@ -136,6 +136,15 @@ def main(page: ft.Page):
                         can_reveal_password=True,
                         disabled=True
                         )
+    entry_nombre_completo =entry_datos(False,"Ingrese su nombre completo",ft.Icon(ft.Icons.PERSON_2_OUTLINED, 
+                                        color=ft.Colors.GREY_800, 
+                                        ))
+    entry_correo_electronico=entry_datos(False,"Ingrese su correo electrónico",ft.Icon(ft.Icons.PERSON_OUTLINE, 
+                                        color=ft.Colors.GREY_800, 
+                                        ))
+    entry_contraseña= entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
+                                        color=ft.Colors.GREY_800,
+                                        ))
 
     def desactivar_entry(e):
             entry_admin.disabled=not e.control.value
@@ -148,15 +157,9 @@ def main(page: ft.Page):
         controls=[
             imagen_inicio(),
             ft.Text("Novus Prestige | El arte de la elegancia", color=ft.Colors.GREY_800),
-            entry_datos(False,"Ingrese su nombre completo",ft.Icon(ft.Icons.PERSON_2_OUTLINED, 
-                                    color=ft.Colors.GREY_800, 
-                                    )),
-            entry_datos(False,"Ingrese su correo electrónico",ft.Icon(ft.Icons.PERSON_OUTLINE, 
-                                    color=ft.Colors.GREY_800, 
-                                    )),
-            entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
-                                    color=ft.Colors.GREY_800,
-                                    )),
+            entry_nombre_completo,
+            entry_correo_electronico,
+            entry_contraseña,
             ft.Checkbox(
                  label=ft.Text("Desea ingresar como administrador?", color=ft.Colors.GREY_800),
                  value=False,
@@ -203,12 +206,8 @@ def main(page: ft.Page):
         controls=[
             imagen_inicio(),
             ft.Text("Novus Prestige | El arte de la elegancia", color=ft.Colors.GREY_800),
-            entry_datos(False,"Ingrese su correo electrónico",ft.Icon(ft.Icons.PERSON_2_OUTLINED, 
-                                    color=ft.Colors.GREY_800, 
-                                    )),
-            entry_datos(True,"Ingrese su contraseña",ft.Icon(ft.Icons.LOCK_OUTLINE, 
-                                    color=ft.Colors.GREY_800, 
-                                    )),
+            entry_correo_electronico,
+            entry_contraseña,
             boton_ingresar("Ingresar", False),
             ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
