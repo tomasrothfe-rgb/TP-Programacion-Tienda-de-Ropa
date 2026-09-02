@@ -2,7 +2,7 @@ import flet as ft
 import sqlite3 as sql
 import logging
 
-from conexion_bd import creacion_bd, comprobar_usuarios, ingresar_usuarios, ingresar_manual
+from conexion_bd import creacion_bd, comprobar_usuarios, ingresar_usuarios
 from clases import Usuario
 
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +45,46 @@ def entry_datos(boolean, texto, icono):
                 ],
             )
 
+    # Definicion del estilo de boton
+
+def boton_ingresar(texto, funcion):
+        return ft.Container(
+            content=ft.TextButton(
+                content=ft.Row(
+                    controls=[
+                    ft.Container(
+                            content=ft.Text(texto,
+                                color=ft.Colors.WHITE,
+                            ),
+                            expand=1,
+                            alignment=ft.Alignment.CENTER_RIGHT
+                    ),
+                    ft.Container(
+                            content=ft.Icon(ft.Icons.ARROW_RIGHT_ALT_SHARP,
+                                color=ft.Colors.WHITE,
+                                ),
+                            expand=1,
+                            alignment=ft.Alignment.CENTER_RIGHT
+                        ),
+                    
+                    ],
+                    alignment=ft.Alignment.CENTER
+                ), 
+                expand=True,
+                on_click= funcion),
+            width=800,
+            height=60,
+            bgcolor="#2b2b2c",
+            border_radius=15,
+            border=ft.Border.all(1, "#a0a0a0"),  
+            shadow=
+                ft.BoxShadow(
+                blur_radius=10,
+                spread_radius=1,
+                color=ft.Colors.with_opacity(0.3,ft.Colors.BLACK),
+                offset=ft.Offset(0, 5),
+            )
+            )
 
 def imagen_inicio():
     return ft.Row(
@@ -74,50 +114,19 @@ def main(page: ft.Page):
     def ingresar_tienda(booleano):
             posible_usuario = comprobar_usuarios(entry_correo_electronico.content.value)
             logging.info(f"La funcion devolvio {posible_usuario}")
+
+            if entry_admin.disabled==True
+
             if booleano == True:
                 logging.info("Modo Registro")
+                if posible_usuario:
+                      logging.info("Este usuario ya existe en la base de datos")
+                    
             else:
                 logging.info("Modo Ingreso")
 
-        # Definicion del estilo de boton
-    def boton_ingresar(texto, booleano):
-        return ft.Container(
-            content=ft.TextButton(
-                content=ft.Row(
-                    controls=[
-                    ft.Container(
-                            content=ft.Text(texto,
-                                color=ft.Colors.WHITE,
-                            ),
-                            expand=1,
-                            alignment=ft.Alignment.CENTER_RIGHT
-                    ),
-                    ft.Container(
-                            content=ft.Icon(ft.Icons.ARROW_RIGHT_ALT_SHARP,
-                                color=ft.Colors.WHITE,
-                                ),
-                            expand=1,
-                            alignment=ft.Alignment.CENTER_RIGHT
-                        ),
-                    
-                    ],
-                    alignment=ft.Alignment.CENTER
-                ), 
-                expand=True,
-                on_click= lambda e: ingresar_tienda(booleano)),
-            width=800,
-            height=60,
-            bgcolor="#2b2b2c",
-            border_radius=15,
-            border=ft.Border.all(1, "#a0a0a0"),  
-            shadow=
-                ft.BoxShadow(
-                blur_radius=10,
-                spread_radius=1,
-                color=ft.Colors.with_opacity(0.3,ft.Colors.BLACK),
-                offset=ft.Offset(0, 5),
-            )
-            )
+                if posible_usuario:
+                      logging.info("Revision de datos")
 
     entry_admin= ft.TextField(
                         width=800,
@@ -147,7 +156,7 @@ def main(page: ft.Page):
                                         ))
 
     def desactivar_entry(e):
-            entry_admin.disabled=not e.control.value
+            entry_admin.disabled = not e.control.value
             entry_admin.value = ""
             entry_admin.update()
 
@@ -187,7 +196,7 @@ def main(page: ft.Page):
                     ),
                     ],
                 ),
-            boton_ingresar("Registrarse", True),
+            boton_ingresar("Registrarse", lambda e: ingresar_tienda(True)),
             ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
@@ -208,7 +217,7 @@ def main(page: ft.Page):
             ft.Text("Novus Prestige | El arte de la elegancia", color=ft.Colors.GREY_800),
             entry_correo_electronico,
             entry_contraseña,
-            boton_ingresar("Ingresar", False),
+            boton_ingresar("Ingresar", lambda e: ingresar_tienda(False)),
             ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 controls=[

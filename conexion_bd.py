@@ -32,12 +32,4 @@ def ingresar_usuarios(email, nombre, contraseña, rol):
     logging.info(f"Se insterto el usuario {email} a la base de datos")
     conexion.commit()
 
-def ingresar_manual():
-    email = input("email ")
-    nombre = input("nombre ")
-    contra = input("contra ")
-    rol = input("rol ")
-
-    cursor.execute("INSERT INTO usuarios VALUES (?,?,?,?)", (nombre, email, contra, rol))
-    conexion.commit()
 
