@@ -142,7 +142,20 @@ def main(page: ft.Page):
                     logging.info("Modo Registro")
                     if posible_usuario:
                         logging.warning("Este usuario ya existe en la base de datos")
-                #Ingreso     
+                        dialogo_box("Usuario ya registrado", "El usuario que intenta registrar ya se encuentra en uso","confirmar")
+                    else:
+                        if entry_admin.disabled:
+                            logging.info("Ingresando usuario a la base de datos")
+                            logging.info(f"Datos:{entry_nombre_completo.content.value} {entry_correo_electronico.content.value} {entry_contraseña.content.value}")
+                            ingresar_usuarios(entry_correo_electronico.content.value, entry_nombre_completo.content.value,entry_contraseña.content.value, "cliente")
+                        else:
+                            if entry_admin.value != "1223":
+                                logging.info("La contraseña de administrador es incorrecta o esta vacia")
+                                dialogo_box("Contraseña incorrecta", "La contraseña de administrador no es correcta o está vacia","confirmar")
+                            else:
+                                logging.info("Ingresando usuario a la base de datos")
+                                ingresar_usuarios(entry_correo_electronico.content.value, entry_nombre_completo.content.value,entry_contraseña.content.value, "admin")
+                #Ingreso    
                 else:
                     logging.info("Modo Ingreso")
 
@@ -179,6 +192,7 @@ def main(page: ft.Page):
 
     def desactivar_entry(e):
             entry_admin.disabled = not e.control.value
+            logging.info(f"{entry_admin.disabled}")
             entry_admin.value = ""
             entry_admin.update()
 
