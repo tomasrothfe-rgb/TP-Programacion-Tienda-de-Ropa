@@ -9,6 +9,8 @@ logging.basicConfig(level=logging.INFO)
 
 creacion_bd()
 
+
+
 # Configuración de los entradas de texto con iconos y estilos personalizados
 def entry_datos(boolean, texto, icono):
         return ft.Container(
@@ -110,29 +112,43 @@ def main(page: ft.Page):
     page.window.min_height= 500
     page.window.min_width = 700
 
+    def dialogo_box(texto_superior, texto_inferior, texto_boton):
+        return page.show_dialog(
+            ft.AlertDialog(
+            modal=True,
+            title=ft.Text(texto_superior),
+            content=ft.Text(texto_inferior),
+            actions=[
+                ft.TextButton(texto_boton, on_click=lambda e: page.pop_dialog()),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+            on_dismiss=lambda e: print("Modal dialog dismissed!"),))
+
         # Funcion para corroborar ingreso y entrar a la pagina de la tienda
     def ingresar_tienda(booleano):
             posible_usuario = comprobar_usuarios(entry_correo_electronico.content.value)
             logging.info(f"La funcion devolvio {posible_usuario}")
 
             if entry_correo_electronico.content.value=="" or entry_contraseña.content.value == "" or entry_nombre_completo.content.value == "" and booleano==True:
-                  logging.warning("Campos incompletos")
+                logging.warning("Campos incompletos")
+                dialogo_box("Datos Incompletos","Por favor, rellene todos los campos","confirmar")
             elif entry_correo_electronico.content.value=="" or entry_contraseña.content.value == "" and booleano==False:
                 logging.warning("Campos incompletos")
+                dialogo_box("Datos Incompletos","Por favor, rellene todos los campos","confirmar")
             else:
                 logging.info("Campos completos")
+                #Registro
+                if booleano == True:
+                    logging.info("Modo Registro")
+                    if posible_usuario:
+                        logging.warning("Este usuario ya existe en la base de datos")
+                #Ingreso     
+                else:
+                    logging.info("Modo Ingreso")
 
-            #Registro
-            if booleano == True:
-                logging.info("Modo Registro")
-                if posible_usuario:
-                      logging.warning("Este usuario ya existe en la base de datos")
-            #Ingreso     
-            else:
-                logging.info("Modo Ingreso")
+                    if posible_usuario:
+                        logging.info("Revision de datos")
 
-                if posible_usuario:
-                      logging.info("Revision de datos")
 
     entry_admin= ft.TextField(
                         width=800,
@@ -168,6 +184,7 @@ def main(page: ft.Page):
 
 
     contenido_registro = ft.Column(
+        key="vista_registro",
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             imagen_inicio(),
@@ -217,6 +234,7 @@ def main(page: ft.Page):
     )
 
     contenido_ingreso = ft.Column(
+        key="vista_ingreso",
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             imagen_inicio(),
@@ -333,9 +351,6 @@ def main(page: ft.Page):
 
     transicion_contenido = ft.AnimatedSwitcher(
             content=contenido_ingreso,
-            duration=400, 
-            transition=ft.AnimatedSwitcherTransition.SCALE,
-            reverse_duration=200,
             switch_in_curve=ft.AnimationCurve.EASE_OUT,
             switch_out_curve=ft.AnimationCurve.EASE_IN,
         )
