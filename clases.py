@@ -1,7 +1,12 @@
 # Clase Usuario
-class Usuario():
-    def __init__(self, nombre, email, contraseña, rol):
+class Cliente():
+    def __init__(self, nombre, email, contraseña):
         self.nombre=nombre
         self.contraseña=contraseña
         self.email = email
-        self.rol=rol
+
+class Admin():
+    def __init__(self, nombre, email, contraseña):
+        self.nombre=nombre
+        self.contraseña=contraseña
+        self.email = email

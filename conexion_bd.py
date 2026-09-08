@@ -15,8 +15,9 @@ def creacion_bd():
     )
 
 # Funcion para comprobar si un usuario existe
-def comprobar_usuarios(nombre):
-    cursor.execute("SELECT * FROM usuarios WHERE nombre = ?", (nombre,))
+def comprobar_usuarios(email):
+    logging.info(f"Se recibio {email}")
+    cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
     fila = cursor.fetchone()
     if fila:
         logging.info("Se encontro el usuario, procediendo a devolver los datos como un arreglo")
@@ -31,12 +32,4 @@ def ingresar_usuarios(email, nombre, contraseña, rol):
     logging.info(f"Se insterto el usuario {email} a la base de datos")
     conexion.commit()
 
-def ingresar_manual():
-    email = input("email ")
-    nombre = input("nombre ")
-    contra = input("contra ")
-    rol = input("rol ")
-
-    cursor.execute("INSERT INTO usuarios VALUES (?,?,?,?)", (nombre, email, contra, rol))
-    conexion.commit()
 
