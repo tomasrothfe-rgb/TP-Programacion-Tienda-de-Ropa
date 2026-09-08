@@ -129,7 +129,7 @@ def main(page: ft.Page):
             posible_usuario = comprobar_usuarios(entry_correo_electronico.content.value)
             logging.info(f"La funcion devolvio {posible_usuario}")
 
-            if entry_correo_electronico.content.value=="" or entry_contraseña.content.value == "" or entry_nombre_completo.content.value == "" and booleano==True:
+            if entry_correo_electronico.content.value=="" or entry_contraseña.content.value == "" or entry_nombre_completo.content.value == "" and booleano:
                 logging.warning("Campos incompletos")
                 dialogo_box("Datos Incompletos","Por favor, rellene todos los campos","confirmar")
             elif entry_correo_electronico.content.value=="" or entry_contraseña.content.value == "" and booleano==False:
@@ -138,7 +138,7 @@ def main(page: ft.Page):
             else:
                 logging.info("Campos completos")
                 #Registro
-                if booleano == True:
+                if booleano:
                     logging.info("Modo Registro")
                     if posible_usuario:
                         logging.warning("Este usuario ya existe en la base de datos")
