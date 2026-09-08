@@ -3,7 +3,7 @@ import sqlite3 as sql
 import logging
 
 from conexion_bd import creacion_bd, comprobar_usuarios, ingresar_usuarios
-from clases import Usuario
+from clases import Cliente
 
 logging.basicConfig(level=logging.INFO)
 
@@ -150,7 +150,7 @@ def main(page: ft.Page):
                             ingresar_usuarios(entry_correo_electronico.content.value, entry_nombre_completo.content.value,entry_contraseña.content.value, "cliente")
                         else:
                             if entry_admin.value != "1223":
-                                logging.info("La contraseña de administrador es incorrecta o esta vacia")
+                                logging.warning("La contraseña de administrador es incorrecta o esta vacia")
                                 dialogo_box("Contraseña incorrecta", "La contraseña de administrador no es correcta o está vacia","confirmar")
                             else:
                                 logging.info("Ingresando usuario a la base de datos")
@@ -158,9 +158,23 @@ def main(page: ft.Page):
                 #Ingreso    
                 else:
                     logging.info("Modo Ingreso")
-
                     if posible_usuario:
                         logging.info("Revision de datos")
+                        if posible_usuario[2] == entry_contraseña.content.value:
+                            logging.info("Inicio de sesion exitoso")
+                            if posible_usuario[3]=="cliente":
+                                logging.info("Iniciando pantalla de cliente")
+                            else:
+                                logging.info("Iniciando pantalla de admin")
+                        else:
+                            logging.warning("La contraseña es incorrecta")
+                            dialogo_box("Contraseña incorrecta", "La contraseña del usuario no es correcta","confirmar")
+                             
+                    else:
+                        logging.warning("Credenciales de inicio de sesion incorrectos")
+                        dialogo_box("Usuario no encontrado", "Las credenciales de contraseña de inicio de sesion no coinciden con ningun usuario","confirmar")
+                                                  
+                    
 
 
     entry_admin= ft.TextField(
