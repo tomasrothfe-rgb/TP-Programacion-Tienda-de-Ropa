@@ -1,9 +1,8 @@
 import flet as ft
-import sqlite3 as sql
 import logging
 
 from conexion_bd import creacion_bd, comprobar_usuarios, ingresar_usuarios
-from clases import Cliente
+from clases import Cliente, Admin
 
 logging.basicConfig(level=logging.INFO)
 
@@ -112,6 +111,7 @@ def main(page: ft.Page):
     page.window.min_height= 500
     page.window.min_width = 700
 
+    
     def dialogo_box(texto_superior, texto_inferior, texto_boton):
         return page.show_dialog(
             ft.AlertDialog(
@@ -164,8 +164,12 @@ def main(page: ft.Page):
                             logging.info("Inicio de sesion exitoso")
                             if posible_usuario[3]=="cliente":
                                 logging.info("Iniciando pantalla de cliente")
+                                usuario_actual= Cliente(posible_usuario[0],posible_usuario[1],posible_usuario[2])
+                                cambiar_vista(4)
                             else:
                                 logging.info("Iniciando pantalla de admin")
+                                usuario_actual= Admin(posible_usuario[0],posible_usuario[1],posible_usuario[2])
+                                cambiar_vista(5)
                         else:
                             logging.warning("La contraseña es incorrecta")
                             dialogo_box("Contraseña incorrecta", "La contraseña del usuario no es correcta","confirmar")
@@ -392,8 +396,13 @@ def main(page: ft.Page):
                 transicion_contenido.content = contenido_registro
             elif indice == 2:
                 logging.info("Se cambia la vista de pagina a la de informacion/inicio")
-            else:
+            elif indice == 3:
                 logging.info("Se cambia la vista de pagina a la de configuracion")
+            elif indice == 4:
+                logging.info("Se cambia la vista de pagina de tienda cliente")
+            elif indice == 5:
+                logging.info("Se cambia la vista de pagina de tienda admin")
+                
 
             transicion_contenido.update()
     
