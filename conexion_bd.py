@@ -7,11 +7,17 @@ cursor = conexion.cursor()
 
 # Conexion con la bd y creacion de tablas
 def creacion_bd():
-    cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
-    nombre TEXT UNIQUE NOT NULL, 
+    cursor.executescript('''CREATE TABLE IF NOT EXISTS usuarios (
+    nombre TEXT NOT NULL, 
     email TEXT UNIQUE NOT NULL,
     contraseña TEXT NOT NULL, 
-    rol TEXT NOT NULL)'''
+    rol TEXT NOT NULL);
+
+    CREATE TABLE IF NOT EXISTS productos (
+    id_producto INTEGER PRIMARY KEY,
+    nombre_producto TEXT UNIQUE NOT NULL, 
+    precio INTEGER NOT NULL, 
+    stock INTEGER);'''
     )
 
 # Funcion para comprobar si un usuario existe
@@ -32,4 +38,8 @@ def ingresar_usuarios(email, nombre, contraseña, rol):
     logging.info(f"Se insterto el usuario {email} a la base de datos")
     conexion.commit()
 
+def agregar_producto(nombre_producto,precio,stock):
+    cursor.execute("INSERT INTO productos (nombre_producto, precio, stock) VALUES (?, ?, ?)",(nombre_producto, precio, stock))
+    logging.info(f"Se insterto el producto {nombre_producto} a la base de datos")
+    conexion.commit()
 
