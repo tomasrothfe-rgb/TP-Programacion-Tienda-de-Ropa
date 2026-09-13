@@ -43,3 +43,8 @@ def agregar_producto(nombre_producto,precio,stock):
     logging.info(f"Se insterto el producto {nombre_producto} a la base de datos")
     conexion.commit()
 
+def mostrar_productos():
+    logging.info("Se va a mostrar los productos")
+    cursor.execute("SELECT * FROM productos")
+    lista = cursor.fetchall()
+    return lista
