@@ -1,13 +1,11 @@
-import flet as ft
-import logging 
-import os
-import sys
+# Definición de la variable en el ámbito global
+contador = 10 
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+def modificar_global():
+    # Indicamos a Python que use la variable global externa
+    global contador 
+    contador = 20
 
-from conexion_bd import creacion_bd, agregar_producto, mostrar_productos
-
-productos= mostrar_productos()
-print(productos)
-for producto in productos:
-    print (producto)
+print("Antes de la función:", contador) # Imprime 10
+modificar_global()
+print("Después de la función:", contador) # Imprime 20

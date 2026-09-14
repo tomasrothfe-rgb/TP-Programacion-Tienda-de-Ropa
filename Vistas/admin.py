@@ -18,12 +18,19 @@ def main(page: ft.Page):
     page.window.width = 700
     page.window.height = 500
 
+    producto_en_seleccion= None
+
+    def producto_seleccionado(e, producto):
+        nonlocal producto_en_seleccion 
+        producto_en_seleccion = producto
+        logging.info(f"Se selecciono {producto_en_seleccion}")
+
     def mostrar():
         productos=mostrar_productos()
         lista_derecha.content.controls.clear()
         for producto in productos:
                lista_derecha.content.controls.append(
-                      ft.Text(f"Nombre: {producto[1]}       Precio: {producto[2]}       Stock: {producto[3]}")
+                      ft.ListTile(title=producto[1], subtitle=(f"Precio: {producto[2]}       Stock: {producto[3]}"), on_click= lambda e, p=producto: producto_seleccionado(e, p))
                     )
         page.update()
 
@@ -32,9 +39,10 @@ def main(page: ft.Page):
         mostrar()
             
     def modificar():
-            logging.info("Se desea modificar productos")
+            logging.info(f"Se desea modificar {producto_en_seleccion}")
     def eliminar():
-            logging.info("Se desea elimnar productos")
+            logging.info(f"Se desea elimnar productos {producto_en_seleccion}")
+            
     
     def agregar_stock():
             logging.info("Se desea agregar stock")
