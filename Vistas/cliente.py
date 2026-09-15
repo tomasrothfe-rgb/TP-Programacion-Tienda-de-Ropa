@@ -22,6 +22,14 @@ def main(page: ft.Page):
     lista_productos=[]
     carrito_letras=0
 
+    def eliminar_del_carrito(p):
+        nonlocal lista_productos
+        nonlocal carrito_letras
+        lista_productos.remove(p)
+        carrito_letras-=1
+        carrito.value=str(carrito_letras)
+        mostrar_carrito()
+
     def agregar_al_carrito(p):
         nonlocal lista_productos
         nonlocal carrito_letras
@@ -40,15 +48,26 @@ def main(page: ft.Page):
         icon_color=ft.Colors.BLACK,
         on_click=lambda e, p=producto: agregar_al_carrito(p))
     ))
-                    
+                      
         page.update()
 
-    def mostraralgo():
-         nonlocal lista_productos
-         print(lista_productos)
+    def mostrar_carrito():
+        nonlocal lista_productos
+        productos=lista_productos
+        lista_derecha.content.controls.clear()
+        for producto in productos:
+               lista_derecha.content.controls.append(
+                      ft.ListTile(title=producto[1], subtitle=(f"Precio: {producto[2]}       Stock: {producto[3]}"),trailing=ft.IconButton(
+        icon=ft.Icons.EXPOSURE_MINUS_1,
+        icon_color=ft.Colors.BLACK,
+        on_click=lambda e, p=producto: eliminar_del_carrito(p)))
+    )
+                      
+        page.update()
 
     
     carrito=ft.Text(str(carrito_letras))
+    
     lista_derecha= ft.Container(
            content=ft.ListView(expand=1, spacing=10, padding=20,),
            bgcolor= ft.Colors.GREY,
@@ -61,7 +80,11 @@ def main(page: ft.Page):
                       ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
                 ft.Button(
                     "Ver carrito de compras",
-                    on_click=lambda e:mostraralgo(), 
+                    on_click=lambda e:mostrar_carrito(), 
+                ),
+                ft.Button(
+                    "Ver tienda",
+                    on_click=lambda e:mostrar_pantalla_productos(), 
                 ),
                 ft.Button(
                     "Comprar",
