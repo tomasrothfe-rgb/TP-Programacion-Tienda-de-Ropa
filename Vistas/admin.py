@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from conexion_bd import creacion_bd, agregar_producto, mostrar_productos, modificar_productos, eliminar_productos
+from conexion_bd import creacion_bd, agregar_producto, mostrar_productos, modificar_productos, eliminar_productos, agregar_stock_producto
 
 logging.basicConfig(level=logging.INFO)
 
@@ -79,9 +79,9 @@ def main(page: ft.Page):
             logging.info(f"Se desea elimnar productos {producto_en_seleccion}")
             dialogo_box((),False,f"ELIMINAR {producto_en_seleccion[1].upper()}", lambda valores: eliminar_productos(producto_en_seleccion[1],producto_en_seleccion[0]))
             
-    
     def agregar_stock():
             logging.info("Se desea agregar stock")
+            dialogo_box(("Stock",),True,f"AGREGAR STOCK DE {producto_en_seleccion[1].upper()}", lambda valores: agregar_stock_producto(producto_en_seleccion[1],*valores,producto_en_seleccion[0]))
     
     def estadisticas():
             logging.info("Se desea ver estadisticas")

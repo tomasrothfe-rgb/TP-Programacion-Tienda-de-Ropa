@@ -48,6 +48,11 @@ def modificar_productos(nombre_producto,precio,id):
     logging.info(f"Nuevos valores de {nombre_producto} en la base de datos")
     conexion.commit()
 
+def agregar_stock_producto(nombre_producto,stock,id):
+    cursor.execute("UPDATE productos SET stock = stock + ? WHERE id_producto = ?",(stock, id))
+    logging.info(f"Se agregó {stock} más de stock a {nombre_producto} en la base de datos")
+    conexion.commit()
+
 def eliminar_productos(nombre_producto,id):
     logging.info(f"elementos {id}")
     cursor.execute("DELETE FROM productos WHERE id_producto = ?",(id,))
