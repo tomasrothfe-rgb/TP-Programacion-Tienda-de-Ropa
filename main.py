@@ -122,7 +122,7 @@ def main(page: ft.Page):
                 ft.TextButton(texto_boton, on_click=lambda e: page.pop_dialog()),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: print("Modal dialog dismissed!"),))
+            on_dismiss=lambda e: logging.info("Se cerro la pestaña"),))
 
         # Funcion para corroborar ingreso y entrar a la pagina de la tienda
     def ingresar_tienda(booleano):

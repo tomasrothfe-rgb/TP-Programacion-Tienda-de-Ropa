@@ -43,6 +43,17 @@ def agregar_producto(nombre_producto,precio,stock):
     logging.info(f"Se insterto el producto {nombre_producto} a la base de datos")
     conexion.commit()
 
+def modificar_productos(nombre_producto,precio,id):
+    cursor.execute("UPDATE productos SET nombre_producto = ?, precio = ? WHERE id_producto = ?",(nombre_producto, precio, id))
+    logging.info(f"Nuevos valores de {nombre_producto} en la base de datos")
+    conexion.commit()
+
+def eliminar_productos(nombre_producto,id):
+    logging.info(f"elementos {id}")
+    cursor.execute("DELETE FROM productos WHERE id_producto = ?",(id,))
+    logging.info(f"Se eliminó el producto {nombre_producto} de la base de datos")
+    conexion.commit()
+
 def mostrar_productos():
     logging.info("Se va a mostrar los productos")
     cursor.execute("SELECT * FROM productos")

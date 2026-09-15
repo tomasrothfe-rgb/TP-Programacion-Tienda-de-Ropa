@@ -5,11 +5,12 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from conexion_bd import creacion_bd, agregar_producto, mostrar_productos
+from conexion_bd import creacion_bd, agregar_producto, mostrar_productos, modificar_productos, eliminar_productos
 
 logging.basicConfig(level=logging.INFO)
 
-creacion_bd()
+
+
 
 def main(page: ft.Page):
     page.title = "Panel de Administrador "
@@ -20,11 +21,6 @@ def main(page: ft.Page):
 
     producto_en_seleccion= None
 
-    def producto_seleccionado(e, producto):
-        nonlocal producto_en_seleccion 
-        producto_en_seleccion = producto
-        logging.info(f"Se selecciono {producto_en_seleccion}")
-
     def mostrar():
         productos=mostrar_productos()
         lista_derecha.content.controls.clear()
@@ -34,14 +30,54 @@ def main(page: ft.Page):
                     )
         page.update()
 
+    def dialogo_box(lista_entrys,boolean,texto_superior,funcion):
+            lista_nueva_entrys=[]
+            def entrys(texto):
+                return ft.TextField(
+                        width=800,
+                        hint_text=texto,
+                        visible=boolean
+            )
+            for i in lista_entrys:
+                lista_nueva_entrys.append(entrys(i))
+    
+            def confirmar_click(e):
+                valores = [entry.value for entry in lista_nueva_entrys]
+                funcion(valores)
+                mostrar()
+                page.pop_dialog()
+    
+            return page.show_dialog(
+                            ft.AlertDialog(
+                            modal=True,
+                            title=ft.Text(texto_superior),
+                            content=ft.Column(
+                                controls=lista_nueva_entrys
+                            ),
+                            actions=[
+                                ft.Button("CONFIRMAR", on_click=confirmar_click),
+                                ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+                            ],
+                            actions_alignment=ft.MainAxisAlignment.END,
+                            on_dismiss=lambda e: logging.info("Se cerro la pestaña")))
+
+    def producto_seleccionado(e, producto):
+        nonlocal producto_en_seleccion 
+        producto_en_seleccion = producto
+        logging.info(f"Se selecciono {producto_en_seleccion}")
+
+
     def agregar():
-        agregar_producto(nombre_producto.value, precio.value, stock.value)
-        mostrar()
+            logging.info("Se desea agregar un producto")
+            dialogo_box(("Nombre", "Precio", "Stock"),True,"AGREGAR PRODUCTO", lambda valores: (agregar_producto(*valores)))
             
     def modificar():
             logging.info(f"Se desea modificar {producto_en_seleccion}")
+            dialogo_box(("Nombre", "Precio"),True,f"MODIFICAR {producto_en_seleccion[1].upper()}", lambda valores: modificar_productos(*valores,producto_en_seleccion[0]))
+
     def eliminar():
             logging.info(f"Se desea elimnar productos {producto_en_seleccion}")
+            dialogo_box((),False,f"ELIMINAR {producto_en_seleccion[1].upper()}", lambda valores: eliminar_productos(producto_en_seleccion[1],producto_en_seleccion[0]))
             
     
     def agregar_stock():
@@ -69,34 +105,31 @@ def main(page: ft.Page):
         content=ft.Column(
                controls=[
                       ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.ElevatedButton(
+                ft.Button(
                     "Agregar productos",
                     on_click=agregar , 
                 ),
-                nombre_producto,
-                precio,
-                stock,
-                ft.ElevatedButton(
+                ft.Button(
                     "Eliminar productos",
                     on_click=eliminar,
                 ),
-                ft.ElevatedButton(
+                ft.Button(
                     "Mostrar productos",
                         on_click= mostrar,
                     ),
-                ft.ElevatedButton(
+                ft.Button(
                     "Modificar productos",
                     on_click=modificar,
                 ),
-                ft.ElevatedButton(
+                ft.Button(
                     "Agregar stock",
                         on_click=agregar_stock,
                     ),
-                ft.ElevatedButton(
+                ft.Button(
                     "Consultar estadisticas",
                     on_click=estadisticas,
                 ),
-                ft.ElevatedButton(
+                ft.Button(
                     "Ver historial de compras productos",
                         on_click=historial,
                     ),
