@@ -5,11 +5,9 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from conexion_bd import creacion_bd, agregar_producto, mostrar_productos, modificar_productos, eliminar_productos, agregar_stock_producto
+from clases import Inventario  
 
 logging.basicConfig(level=logging.INFO)
-
-
 
 
 def main(page: ft.Page):
@@ -19,135 +17,96 @@ def main(page: ft.Page):
     page.window.width = 700
     page.window.height = 500
 
-    producto_en_seleccion= None
+    inventario = Inventario()
+    producto_en_seleccion = None
 
-    def mostrar():
-        productos=mostrar_productos()
-        lista_derecha.content.controls.clear()
-        for producto in productos:
-               lista_derecha.content.controls.append(
-                      ft.ListTile(title=producto[1], subtitle=(f"Precio: {producto[2]}       Stock: {producto[3]}"), on_click= lambda e, p=producto: producto_seleccionado(e, p))
+    def ventana_de_alerta(texto_superior, erratas):
+
+        def diseño_entradas(erratas):
+                    return ft.Text(
+                        erratas,
                     )
-        page.update()
 
-    def dialogo_box(lista_entrys,boolean,texto_superior,funcion):
-            lista_nueva_entrys=[]
-            def entrys(texto):
-                return ft.TextField(
-                        width=800,
-                        hint_text=texto,
-                        visible=boolean
-            )
-            for i in lista_entrys:
-                lista_nueva_entrys.append(entrys(i))
-    
-            def confirmar_click(e):
-                valores = [entry.value for entry in lista_nueva_entrys]
-                funcion(valores)
-                mostrar()
-                page.pop_dialog()
-    
-            return page.show_dialog(
-                            ft.AlertDialog(
+        return page.show_dialog(
+                    ft.AlertDialog(
                             modal=True,
                             title=ft.Text(texto_superior),
                             content=ft.Column(
-                                controls=lista_nueva_entrys
+                                diseño_entradas(erratas)
                             ),
                             actions=[
-                                ft.Button("CONFIRMAR", on_click=confirmar_click),
-                                ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
-                            ],
-                            actions_alignment=ft.MainAxisAlignment.END,
-                            on_dismiss=lambda e: logging.info("Se cerro la pestaña")))
+                                    ft.Button("CONFIRMAR",on_click=lambda e: page.pop_dialog()),
+                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+                                ],
+                            actions_alignment=ft.MainAxisAlignment.END,))
 
-    def producto_seleccionado(e, producto):
-        nonlocal producto_en_seleccion 
-        producto_en_seleccion = producto
-        logging.info(f"Se selecciono {producto_en_seleccion}")
+    def ventana_de_dialogo(entradas,texto_superior,funcion):
+        entradas_ventana=[]
+
+        def confirmar_entradas():
+            entradas= [diseño_entradas.value for diseño_entradas in entradas_ventana]
+            retorno_funcion=funcion(*entradas)
+            if retorno_funcion is None:
+                 page.pop_dialog()
+            else:
+                 ventana_de_alerta(*retorno_funcion)
+
+        def diseño_entradas(variable):
+            return ft.TextField(
+                hint_text=variable
+            )
+
+        for entrada in entradas:
+            entradas_ventana.append(diseño_entradas(entrada))
+
+        
+        return page.show_dialog(
+            ft.AlertDialog(
+                    modal=True,
+                    title=ft.Text(texto_superior),
+                    content=ft.Column(
+                        entradas_ventana
+                    ),
+                    actions=[
+                            ft.Button("CONFIRMAR",on_click=lambda e: confirmar_entradas()),
+                            ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+                        ],
+                    actions_alignment=ft.MainAxisAlignment.END,))
 
 
     def agregar():
-            logging.info("Se desea agregar un producto")
-            dialogo_box(("Nombre", "Precio", "Stock"),True,"AGREGAR PRODUCTO", lambda valores: (agregar_producto(*valores)))
-            
-    def modificar():
-            logging.info(f"Se desea modificar {producto_en_seleccion}")
-            dialogo_box(("Nombre", "Precio"),True,f"MODIFICAR {producto_en_seleccion[1].upper()}", lambda valores: modificar_productos(*valores,producto_en_seleccion[0]))
+        logging.info("Se desea agregar un producto")
+        ventana_de_dialogo(("Nombre","Precio","Stock"),"AGREGAR PRODUCTO", inventario.agregar_producto)
 
-    def eliminar():
-            logging.info(f"Se desea elimnar productos {producto_en_seleccion}")
-            dialogo_box((),False,f"ELIMINAR {producto_en_seleccion[1].upper()}", lambda valores: eliminar_productos(producto_en_seleccion[1],producto_en_seleccion[0]))
-            
-    def agregar_stock():
-            logging.info("Se desea agregar stock")
-            dialogo_box(("Stock",),True,f"AGREGAR STOCK DE {producto_en_seleccion[1].upper()}", lambda valores: agregar_stock_producto(producto_en_seleccion[1],*valores,producto_en_seleccion[0]))
-    
-    def estadisticas():
-            logging.info("Se desea ver estadisticas")
-    
-    def historial():
-            logging.info("Se desea ver historial")
 
-    nombre_producto=ft.TextField()
-    precio=ft.TextField()
-    stock=ft.TextField()
-
-    lista_derecha= ft.Container(
-           content=ft.ListView(expand=1, spacing=10, padding=20,),
-           bgcolor= ft.Colors.GREY,
-           expand=True
+    lista_derecha = ft.Container(
+        content=ft.ListView(expand=1, spacing=10, padding=20),
+        bgcolor=ft.Colors.GREY,
+        expand=True
     )
 
-    mostrar()
-
-    contenedor_izquierdo=ft.Container(
+    contenedor_izquierdo = ft.Container(
         content=ft.Column(
-               controls=[
-                      ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.Button(
-                    "Agregar productos",
-                    on_click=agregar , 
-                ),
-                ft.Button(
-                    "Eliminar productos",
-                    on_click=eliminar,
-                ),
-                ft.Button(
-                    "Mostrar productos",
-                        on_click= mostrar,
-                    ),
-                ft.Button(
-                    "Modificar productos",
-                    on_click=modificar,
-                ),
-                ft.Button(
-                    "Agregar stock",
-                        on_click=agregar_stock,
-                    ),
-                ft.Button(
-                    "Consultar estadisticas",
-                    on_click=estadisticas,
-                ),
-                ft.Button(
-                    "Ver historial de compras productos",
-                        on_click=historial,
-                    ),
-               ]
+            controls=[
+                ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
+                ft.Button("Agregar productos", on_click=agregar),
+                #ft.Button("Eliminar productos", on_click=eliminar),
+                #ft.Button("Mostrar productos", on_click=mostrar),
+                #ft.Button("Modificar productos", on_click=modificar),
+                #ft.Button("Agregar stock", on_click=agregar_stock),
+                #ft.Button("Consultar estadisticas", on_click=estadisticas),
+                #ft.Button("Ver historial de compras productos", on_click=historial),
+            ]
         )
     )
 
     page.add(
         ft.Row(
-            controls=[
-                   contenedor_izquierdo,
-                   lista_derecha
-                      ],
+            controls=[contenedor_izquierdo, lista_derecha],
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,
         )
-        
     )
 
 

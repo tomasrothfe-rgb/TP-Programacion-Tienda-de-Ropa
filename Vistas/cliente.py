@@ -10,8 +10,6 @@ from conexion_bd import creacion_bd, mostrar_productos
 logging.basicConfig(level=logging.INFO)
 
 
-
-
 def main(page: ft.Page):
     page.title = "Panel de Administrador "
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
@@ -33,7 +31,10 @@ def main(page: ft.Page):
     def agregar_al_carrito(p):
         nonlocal lista_productos
         nonlocal carrito_letras
-        lista_productos.append(p)
+        if p in lista_productos:
+            print("sumar")
+        else:
+            lista_productos.append(p)
         carrito_letras+=1
         carrito.value=str(carrito_letras)
         page.update()

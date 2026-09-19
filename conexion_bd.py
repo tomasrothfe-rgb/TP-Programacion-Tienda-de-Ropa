@@ -37,30 +37,3 @@ def ingresar_usuarios(email, nombre, contraseña, rol):
     cursor.execute("INSERT INTO usuarios VALUES (?, ?, ?, ?)",(nombre, email, contraseña, rol))
     logging.info(f"Se insterto el usuario {email} a la base de datos")
     conexion.commit()
-
-def agregar_producto(nombre_producto,precio,stock):
-    cursor.execute("INSERT INTO productos (nombre_producto, precio, stock) VALUES (?, ?, ?)",(nombre_producto, precio, stock))
-    logging.info(f"Se insterto el producto {nombre_producto} a la base de datos")
-    conexion.commit()
-
-def modificar_productos(nombre_producto,precio,id):
-    cursor.execute("UPDATE productos SET nombre_producto = ?, precio = ? WHERE id_producto = ?",(nombre_producto, precio, id))
-    logging.info(f"Nuevos valores de {nombre_producto} en la base de datos")
-    conexion.commit()
-
-def agregar_stock_producto(nombre_producto,stock,id):
-    cursor.execute("UPDATE productos SET stock = stock + ? WHERE id_producto = ?",(stock, id))
-    logging.info(f"Se agregó {stock} más de stock a {nombre_producto} en la base de datos")
-    conexion.commit()
-
-def eliminar_productos(nombre_producto,id):
-    logging.info(f"elementos {id}")
-    cursor.execute("DELETE FROM productos WHERE id_producto = ?",(id,))
-    logging.info(f"Se eliminó el producto {nombre_producto} de la base de datos")
-    conexion.commit()
-
-def mostrar_productos():
-    logging.info("Se va a mostrar los productos")
-    cursor.execute("SELECT * FROM productos")
-    lista = cursor.fetchall()
-    return lista
