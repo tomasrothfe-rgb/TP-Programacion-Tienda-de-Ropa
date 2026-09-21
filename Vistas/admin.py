@@ -21,6 +21,7 @@ def main(page: ft.Page):
     inventario = Inventario()
     producto_en_seleccion = None
 
+
     def ventana_de_alerta(texto_superior, erratas):
 
         def diseño_entradas(erratas):
@@ -80,6 +81,7 @@ def main(page: ft.Page):
                 retorno = inventario.agregar_producto(
                     elementos_seleccionados["categorias"],
                     elementos_seleccionados["marcas"],
+                    precio.value,
                     origen,
                 )
                 if retorno != None:
@@ -105,6 +107,9 @@ def main(page: ft.Page):
              height=200,
              fit=ft.BoxFit.CONTAIN,
              visible=False
+        )
+        precio=ft.TextField(
+             hint_text="Precio"
         )
 
         for clave, lista in elementos_diccionario.items():
@@ -144,6 +149,7 @@ def main(page: ft.Page):
                                         style=ft.MenuStyle(alignment=ft.Alignment.TOP_LEFT),
                                         controls=menu_bar_controles,
                                         ),
+                                    precio,
                                     ft.Row(
                                          controls=[
                                                 ft.Button(
@@ -192,22 +198,59 @@ def main(page: ft.Page):
 
     def mostrar():
         lista_productos=inventario.listar_productos()
-        lista_derecha.content.controls.clear()
-        for i in lista_productos:
-            lista_derecha.content.controls.append(ft.Button(
+        grid_productos.controls.clear()
+        for p in lista_productos:
+            tarjeta_producto = ft.Container(
                 content=ft.Column(
-                      controls=[
-                           ft.Image(src="Imagenes/nova_prestige_logo.png", height=50, width=50),
-                           ft.Text(f"{i.nombre}"),
-                           ft.Row(
+                    controls=[
+                        ft.Image(
+                            src=p.imagen,
+                            border_radius=10,
+                            fit="cover",
+                            expand=True 
+                        ),
+                        ft.Container(
+                            padding=10,
+                            content=ft.Column(
                                 controls=[
-                                     ft.Text(f"{i.precio}"),
-                                     ft.Text(f"{i.stock}")
-                                ]
-                           )
-                      ]
-                 )
-            ))
+                                    ft.Text(f"{p.categoria} {p.marca}", weight=ft.FontWeight.BOLD, size=16, max_lines=1),
+                                    ft.Row(
+                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                        controls=[
+                                            ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
+                                            ft.IconButton(
+                                                icon=ft.Icons.ADD_SHOPPING_CART_ROUNDED,
+                                                icon_color=ft.Colors.BLUE_600,
+                                                tooltip="Agregar al carrito",
+                                                data=f"{p.categoria} {p.marca}",
+                                                on_click=""
+                                            )
+                                        ]
+                                    )
+                                ],
+                                spacing=5
+                            )
+                        )
+                    ],
+                    spacing=0,
+                ),
+                border=ft.Border(
+                    top=ft.BorderSide(1, ft.Colors.GREY_300),
+                    bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                    left=ft.BorderSide(1, ft.Colors.GREY_300),
+                    right=ft.BorderSide(1, ft.Colors.GREY_300)
+                ),
+                border_radius=12,
+                bgcolor=ft.Colors.WHITE,
+                shadow=ft.BoxShadow(
+                    blur_radius=10,
+                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                    offset=ft.Offset(0, 4)
+                ),
+            )
+            
+            grid_productos.controls.append(tarjeta_producto)
+            
 
     def agregar(tipo):
         texto_superior=f"AGREGAR {tipo.upper()}"
@@ -223,10 +266,12 @@ def main(page: ft.Page):
 
 
 
-    lista_derecha = ft.Container(
-        content=ft.ListView(expand=1, spacing=10, padding=20),
-        bgcolor=ft.Colors.GREY,
-        expand=True
+    grid_productos = ft.GridView(
+        expand=1,
+        max_extent=250,       
+        child_aspect_ratio=0.8, 
+        spacing=20,
+        run_spacing=20,
     )
 
     contenedor_izquierdo = ft.Container(
@@ -249,7 +294,7 @@ def main(page: ft.Page):
 
     page.add(
         ft.Row(
-            controls=[contenedor_izquierdo, lista_derecha],
+            controls=[contenedor_izquierdo, grid_productos],
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,

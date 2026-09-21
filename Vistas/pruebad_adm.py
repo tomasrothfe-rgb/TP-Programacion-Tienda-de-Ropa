@@ -1,54 +1,102 @@
 import flet as ft
 
 def main(page: ft.Page):
-    page.title = "Verificador de Archivos PNG"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.title = "Visor de Productos"
+    page.padding = 20
+    page.theme_mode = ft.ThemeMode.LIGHT
+    
+    # Lista de datos de ejemplo (Simulación de una base de datos)
+    productos = [
+        {"nombre": "Laptop Gamer", "precio": "$1,200", "imagen": "https://picsum.photos"},
+        {"nombre": "Auriculares Bluetooth", "precio": "$85", "imagen": "https://picsum.photos"},
+        {"nombre": "Teclado Mecánico", "precio": "$45", "imagen": "https://picsum.photos"},
+        {"nombre": "Mouse Inalámbrico", "precio": "$30", "imagen": "https://picsum.photos"},
+        {"nombre": "Monitor 4K", "precio": "$350", "imagen": "https://picsum.photos"},
+        {"nombre": "Silla Ergonómica", "precio": "$180", "imagen": "https://picsum.photos"},
+    ]
 
-    # Texto donde se mostrará el resultado
-    resultado_texto = ft.Text(value="Ningún archivo seleccionado", size=16, weight=ft.FontWeight.BOLD)
-
-    # Función asíncrona moderna para invocar el FilePicker
-    async def seleccionar_archivo(e):
-        files = await ft.FilePicker().pick_files(
-            allow_multiple=False,
-            allowed_extensions=["png", "jpg", "jpeg"] 
+    # Función que se ejecuta al presionar el botón de carrito
+    def agregar_al_carrito(e):
+        producto_nombre = e.control.data
+        print(producto_nombre)
+        page.snack_bar = ft.SnackBar(
+            content=ft.Text(f"¡{producto_nombre} agregado al carrito!"),
+            action="OK"
         )
-        
-        # Validamos si el usuario seleccionó un archivo o canceló
-        if files:
-            archivo = files[0] # Tomamos el primer archivo seleccionado de la lista
-            nombre_archivo = archivo.name
-            
-            # Verificamos si termina en .png
-            if nombre_archivo.lower().endswith('.png'):
-                resultado_texto.value = f"✅ ¡Correcto! '{nombre_archivo}' es un archivo PNG."
-                resultado_texto.color = ft.Colors.GREEN_600
-            else:
-                resultado_texto.value = f"❌ Error: '{nombre_archivo}' NO es un archivo PNG."
-                resultado_texto.color = ft.Colors.RED_600
-        else:
-            resultado_texto.value = "Selección cancelada."
-            resultado_texto.color = ft.Colors.ORANGE_600
-        
+        page.snack_bar.open = True
         page.update()
 
-    
-    page.add(
-        ft.Column(
-            controls=[
-                ft.Text("Validador de Formato PNG", size=24, weight=ft.FontWeight.BOLD),
-                ft.Button(
-                    content=ft.Text("Seleccionar archivo"),
-                    icon=ft.Icons.UPLOAD_FILE,
-                    on_click=seleccionar_archivo
-                ),
-                ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-                resultado_texto
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER
-        )
+    # Contenedor GridView para mostrar los productos en filas y columnas
+    grid_productos = ft.GridView(
+        expand=1,
+        max_extent=250,        # Ancho máximo de cada tarjeta de producto
+        child_aspect_ratio=0.8, # Relación de aspecto (más alto que ancho)
+        spacing=20,
+        run_spacing=20,
     )
 
-# Ejecutar la aplicación de forma estándar
-ft.run(main)
+    # Creamos las tarjetas para cada producto
+    for p in productos:
+        tarjeta_producto = ft.Container(
+            content=ft.Column(
+                controls=[
+                    # Imagen del producto
+                    ft.Image(
+                        src=p["imagen"],
+                        border_radius=10,
+                        fit="cover",
+                        expand=True 
+                    ),
+                    # Información del producto (Texto y Botón)
+                    ft.Container(
+                        padding=10,
+                        content=ft.Column(
+                            controls=[
+                                ft.Text(p["nombre"], weight=ft.FontWeight.BOLD, size=16, max_lines=1),
+                                ft.Row(
+                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                    controls=[
+                                        ft.Text(p["precio"], size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
+                                        ft.IconButton(
+                                            icon=ft.Icons.ADD_SHOPPING_CART_ROUNDED,
+                                            icon_color=ft.Colors.BLUE_600,
+                                            tooltip="Agregar al carrito",
+                                            data=p["nombre"],
+                                            on_click=agregar_al_carrito
+                                        )
+                                    ]
+                                )
+                            ],
+                            spacing=5
+                        )
+                    )
+                ],
+                spacing=0
+            ),
+            # Estilo del recuadro del producto (Corregido con ft.Border)
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300)
+            ),
+            border_radius=12,
+            bgcolor=ft.Colors.WHITE,
+            shadow=ft.BoxShadow(
+                blur_radius=10,
+                color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                offset=ft.Offset(0, 4)
+            )
+        )
+        
+        # Agregamos la tarjeta al GridView
+        grid_productos.controls.append(tarjeta_producto)
+
+    # Añadir el GridView a la página
+    page.add(
+        ft.Text("Nuestros Productos", size=28, weight=ft.FontWeight.BOLD),
+        ft.Divider(),
+        grid_productos
+    )
+
+ft.app(target=main)

@@ -24,42 +24,61 @@ class Admin():
         self.email = email
 
 class Producto:
-    def __init__(self, id, nombre, precio, stock):
+    def __init__(self, id, categoria, marca,precio, imagen):
         self.id = id
-        self.nombre = nombre
-        self.precio = precio
-        self.stock = stock
+        self.categoria = categoria
+        self.marca = marca
+        self.precio= precio
+        self.imagen = imagen
 
 class Inventario:
 
     @staticmethod
     def listar_productos():
         logging.info("Se va a mostrar los productos")
-        cursor.execute("SELECT * FROM productos")
+        cursor.execute(
+            """
+            SELECT p.id_producto,
+                (SELECT nombre_categoria FROM categorias
+                    WHERE id_categoria_producto = p.id_categoria_producto),
+                (SELECT nombre_marca FROM marcas
+                    WHERE id_marca_producto = p.id_marca_producto),
+                p.precio,
+                p.url_imagen
+            FROM productos p
+            """
+        )
         filas = cursor.fetchall()
         return [Producto(*fila) for fila in filas]
 
     @staticmethod
-    def agregar_producto(categoria, marca, imagen):
+    def agregar_producto(categoria, marca, precio, imagen):
         def limpiar_nombre(texto):
             return re.sub(r"[^\w-]", "_", texto)
         
         url_imagen = URL_IMAGEN_DEFAULT
 
         try:
+            valor_precio = float(precio.replace(",", "."))
+            if valor_precio <= 0:
+                raise ValueError
+        except ValueError:
+            return("PRECIO INVÁLIDO", "INGRESE UN PRECIO NUMÉRICO MAYOR A 0")
+            
+            
+        try:
             cursor.execute(
                 """
-                INSERT INTO productos (id_categoria_producto, id_marca_producto, url_imagen)
+                INSERT INTO productos (id_categoria_producto, id_marca_producto, precio, url_imagen)
                 VALUES (
                     (SELECT id_categoria_producto FROM categorias WHERE nombre_categoria = ?),
                     (SELECT id_marca_producto FROM marcas WHERE nombre_marca = ?),
-                    ?
+                    ?, ?
                 )
                 """,
-                (categoria, marca, url_imagen),
+                (categoria, marca, precio, url_imagen),
             )
             id_producto = cursor.lastrowid          
-
             if imagen != None:
                 extension = os.path.splitext(imagen)[1].lower()    
                 nombre = f"{limpiar_nombre(categoria)}_{limpiar_nombre(marca)}_{id_producto}{extension}"
