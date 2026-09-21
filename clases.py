@@ -1,10 +1,15 @@
 # Clase Usuario
 import sqlite3 as sql
 import logging 
+import os
+import re
+import shutil
 logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
 cursor = conexion.cursor()
+CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"
+URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
 
 class Cliente():
     def __init__(self, nombre, email, contraseña):
@@ -36,9 +41,51 @@ class Inventario:
 
     @staticmethod
     def agregar_producto(categoria, marca, imagen):
-        if imagen==None:
-           imagen="Imagenes/Imagenes_Productos/imagen_default.png"
+        def limpiar_nombre(texto):
+            return re.sub(r"[^\w-]", "_", texto)
+        
+        url_imagen = URL_IMAGEN_DEFAULT
 
+        try:
+            cursor.execute(
+                """
+                INSERT INTO productos (id_categoria_producto, id_marca_producto, url_imagen)
+                VALUES (
+                    (SELECT id_categoria_producto FROM categorias WHERE nombre_categoria = ?),
+                    (SELECT id_marca_producto FROM marcas WHERE nombre_marca = ?),
+                    ?
+                )
+                """,
+                (categoria, marca, url_imagen),
+            )
+            id_producto = cursor.lastrowid          
+
+            if imagen != None:
+                extension = os.path.splitext(imagen)[1].lower()    
+                nombre = f"{limpiar_nombre(categoria)}_{limpiar_nombre(marca)}_{id_producto}{extension}"
+                url_imagen = f"{CARPETA_IMAGENES}/{nombre}"
+                cursor.execute(
+                    "UPDATE productos SET url_imagen = ? WHERE id_producto = ?",
+                    (url_imagen, id_producto),
+                )
+
+            conexion.commit()
+            logging.info(f"Se insertó el producto {categoria, marca, url_imagen} en la base de datos")
+
+        except Exception as e:
+            conexion.rollback()
+            logging.error(f"Error al insertar en la base de datos: {e}")
+            return ("ERROR", "EL PRODUCTO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
+
+        if imagen != None:
+            try:
+                os.makedirs(CARPETA_IMAGENES, exist_ok=True)
+                shutil.copy(imagen, url_imagen)
+            except Exception as e:
+                logging.error(f"Error al copiar la imagen: {e}")
+                return ("ERROR", "EL PRODUCTO SE GUARDÓ, PERO NO SE PUDO COPIAR LA IMAGEN")
+
+        return None
 
     @staticmethod
     def modificar_producto(id, nombre, precio):
