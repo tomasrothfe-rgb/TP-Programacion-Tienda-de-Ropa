@@ -113,10 +113,54 @@ class Inventario:
         conexion.commit()
 
     @staticmethod
-    def eliminar_producto(id, nombre):
-        cursor.execute("DELETE FROM productos WHERE id_producto = ?",(id,))
-        logging.info(f"Se eliminó el producto {nombre} de la base de datos")
-        conexion.commit()
+    def eliminar_producto(id):
+        try:
+            cursor.execute(
+                "SELECT url_imagen FROM productos WHERE id_producto = ?",
+                (id,)
+            )
+
+            resultado = cursor.fetchone()
+
+            if resultado is None:
+                return (
+                    "ERROR AL ELIMINAR PRODUCTO",
+                    "EL PRODUCTO NO EXISTE"
+                )
+
+            url_imagen = resultado[0]
+
+            cursor.execute(
+                "DELETE FROM stock_variantes WHERE id_producto = ?",
+                (id,)
+            )
+
+            cursor.execute(
+                "DELETE FROM productos WHERE id_producto = ?",
+                (id,)
+            )
+
+            conexion.commit()
+
+            if (
+                url_imagen
+                and url_imagen != URL_IMAGEN_DEFAULT
+                and os.path.exists(url_imagen)
+            ):
+                os.remove(url_imagen)
+
+            logging.info("Se eliminó el producto de la base de datos")
+
+            return None
+
+        except Exception as e:
+            conexion.rollback()
+            logging.error(f"Error al eliminar producto: {e}")
+
+            return (
+                "ERROR AL ELIMINAR PRODUCTO",
+                "NO SE PUDO ELIMINAR EL PRODUCTO"
+            )
 
     @staticmethod
     def agregar_stock(datos):

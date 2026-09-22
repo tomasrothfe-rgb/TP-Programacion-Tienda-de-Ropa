@@ -20,11 +20,32 @@ def main(page: ft.Page):
     inventario = Inventario()
     producto_en_seleccion = None
 
+    def eliminar():
+        def confirmar_click():
+             inventario.eliminar_producto(producto_en_seleccion)
+             page.pop_dialog()
+             mostrar()
+
+        if producto_en_seleccion==None:
+            ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA ELIMINAR")
+        else:
+             return page.show_dialog(
+                                ft.AlertDialog(
+                                        modal=True,
+                                        title=ft.Text("ELIMINAR PRODUCTO"),
+                                        content=ft.Column(
+                                            ft.Text("¿ESTA SEGURO DE ELIMNAR ESTE PRODUCTO DE LA TIENDA?")
+                                        ),
+                                        actions=[
+                                                ft.Button("CONFIRMAR",on_click=lambda e: confirmar_click()),
+                                                ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+                                            ],
+                                        actions_alignment=ft.MainAxisAlignment.END,))
+
     def cambiar_seleccion(e, id):
         nonlocal producto_en_seleccion
         producto_en_seleccion = id
         print(producto_en_seleccion)
-
 
     def agregar_stock():
         def confirmar_click():
@@ -224,6 +245,7 @@ def main(page: ft.Page):
                 actions_alignment=ft.MainAxisAlignment.END
             )
         )
+
     def ventana_de_alerta(texto_superior, erratas):
 
         def diseño_entradas(erratas):
@@ -460,7 +482,6 @@ def main(page: ft.Page):
             
             grid_productos.controls.append(tarjeta_producto)
             
-
     def agregar(tipo):
         texto_superior=f"AGREGAR {tipo.upper()}"
         logging.info(f"Se desea agregar {tipo}")
@@ -489,7 +510,7 @@ def main(page: ft.Page):
                 ft.Button("Agregar marca", on_click=lambda: agregar("marca")),
                 ft.Button("Agregar categoria", on_click=lambda: agregar("categoria")),
                 ft.Button("Agregar color", on_click=lambda: agregar("color")),
-                #ft.Button("Eliminar productos", on_click=eliminar),
+                ft.Button("Eliminar productos", on_click=eliminar),
                 ft.Button("Mostrar productos", on_click=mostrar),
                 #ft.Button("Modificar productos", on_click=modificar),
                 ft.Button("Agregar stock", on_click=lambda: agregar_stock()),
