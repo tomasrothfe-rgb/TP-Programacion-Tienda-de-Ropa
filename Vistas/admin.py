@@ -28,14 +28,39 @@ def main(page: ft.Page):
 
     def agregar_stock():
         def confirmar_click():
-            lista=[]
-            for talle,i in campos_stock.items():
-                if i.value:
-                     lista.append({"id":producto_en_seleccion,"color":color_seleccionado,"talle": talle, "cantidad":int(i.value)})
 
-            inventario.agregar_stock(lista)
-            page.pop_dialog()
-            agregar_stock()
+            if color_seleccionado is None:
+                ventana_de_alerta(
+                    "ERROR DE STOCK",
+                    "DEBE SELECCIONAR UN COLOR"
+                )
+                return
+
+            lista = []
+
+            for talle, i in campos_stock.items():
+                if i.value:
+                    lista.append({
+                        "id": producto_en_seleccion,
+                        "color": color_seleccionado,
+                        "talle": talle,
+                        "cantidad": i.value
+                    })
+
+            if not lista:
+                ventana_de_alerta(
+                    "ERROR DE STOCK",
+                    "DEBE INGRESAR AL MENOS UNA CANTIDAD"
+                )
+                return
+
+            retorno = inventario.agregar_stock(lista)
+
+            if retorno is not None:
+                ventana_de_alerta(*retorno)
+            else:
+                page.pop_dialog()
+                agregar_stock()
 
 
         if not producto_en_seleccion:

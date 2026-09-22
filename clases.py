@@ -118,67 +118,98 @@ class Inventario:
         logging.info(f"Se eliminó el producto {nombre} de la base de datos")
         conexion.commit()
 
-
     @staticmethod
     def agregar_stock(datos):
-        cursor = conexion.cursor()
+        try:
+            cursor = conexion.cursor()
 
-        for dato in datos:
+            print("DATOS RECIBIDOS:", datos)
 
-            cursor.execute("""
-                SELECT id_talle_producto
-                FROM talles
-                WHERE nombre_talle = ?
-            """, (dato["talle"],))
+            for dato in datos:
 
-            talle = cursor.fetchone()
-
-            cursor.execute("""
-                SELECT id_color_producto
-                FROM colores
-                WHERE nombre_color = ?
-            """, (dato["color"],))
-
-            color = cursor.fetchone()
-
-            if talle is None or color is None:
-                continue
-
-            id_talle = talle[0]
-            id_color = color[0]
-
-            cursor.execute("""
-                UPDATE stock_variantes
-                SET cantidad_stock = cantidad_stock + ?
-                WHERE id_producto = ?
-                AND id_talle_producto = ?
-                AND id_color_producto = ?
-            """, (
-                dato["cantidad"],
-                dato["id"],
-                id_talle,
-                id_color
-            ))
-
-            if cursor.rowcount == 0:
+                print("PROCESANDO:", dato)
 
                 cursor.execute("""
-                    INSERT INTO stock_variantes (
-                        id_producto,
-                        id_talle_producto,
-                        id_color_producto,
-                        cantidad_stock
-                    )
-                    VALUES (?, ?, ?, ?)
+                    SELECT id_talle_producto
+                    FROM talles
+                    WHERE nombre_talle = ?
+                """, (dato["talle"],))
+
+                talle = cursor.fetchone()
+
+                print("ID TALLE:", talle)
+
+                cursor.execute("""
+                    SELECT id_color_producto
+                    FROM colores
+                    WHERE nombre_color = ?
+                """, (dato["color"],))
+
+                color = cursor.fetchone()
+
+                print("ID COLOR:", color)
+
+                if talle is None or color is None:
+                    raise ValueError("El talle o color no existe")
+
+                id_talle = talle[0]
+                id_color = color[0]
+
+                cursor.execute("""
+                    UPDATE stock_variantes
+                    SET cantidad_stock = cantidad_stock + ?
+                    WHERE id_producto = ?
+                    AND id_talle_producto = ?
+                    AND id_color_producto = ?
                 """, (
+                    int(dato["cantidad"]),
                     dato["id"],
                     id_talle,
-                    id_color,
-                    dato["cantidad"]
+                    id_color
                 ))
 
-        conexion.commit()
+                print("FILAS ACTUALIZADAS:", cursor.rowcount)
 
+                if cursor.rowcount == 0:
+
+                    print("NO EXISTE, INSERTANDO...")
+
+                    cursor.execute("""
+                        INSERT INTO stock_variantes (
+                            id_producto,
+                            id_talle_producto,
+                            id_color_producto,
+                            cantidad_stock
+                        )
+                        VALUES (?, ?, ?, ?)
+                    """, (
+                        dato["id"],
+                        id_talle,
+                        id_color,
+                        int(dato["cantidad"])
+                    ))
+
+                    print("INSERTADO")
+
+            conexion.commit()
+
+            print("COMMIT REALIZADO")
+
+            logging.info("Se agregó stock correctamente")
+
+            return None
+
+        except Exception as e:
+            conexion.rollback()
+
+            print("ERROR:", e)
+
+            logging.error(f"Error al ingresar stock: {e}")
+
+            return (
+                "ERROR AL INGRESAR STOCK",
+                "ASEGURESE DE INGRESAR BIEN LOS DATOS DE STOCK"
+            )
     @staticmethod
     def listar_stock(id_producto):
         logging.info(f"Se va a mostrar el stock del producto {id_producto}")
