@@ -104,5 +104,20 @@ def ingresar_usuarios(email, nombre, contraseña, rol):
     cursor.execute("INSERT INTO usuarios VALUES (?, ?, ?, ?)",(nombre, email, contraseña, rol))
     logging.info(f"Se insterto el usuario {email} a la base de datos")
     conexion.commit()
+def insertar():
+    cursor.execute(
+    """
+    INSERT INTO stock_variantes (id_producto, id_talle_producto, id_color_producto, cantidad_stock)
+    VALUES (
+        ?,
+        (SELECT id_talle_producto FROM talles WHERE nombre_talle = ?),
+        (SELECT id_color_producto FROM colores WHERE nombre_color = ?),
+        ?
+    )
+    """,
+    (1, "XL", "Azul", 1),
+    )
+    conexion.commit()  
 
-creacion_bd()
+insertar()
+

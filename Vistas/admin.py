@@ -2,7 +2,6 @@ import flet as ft
 import logging 
 import os
 import sys
-import shutil
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -21,7 +20,185 @@ def main(page: ft.Page):
     inventario = Inventario()
     producto_en_seleccion = None
 
+    def cambiar_seleccion(e, id):
+        nonlocal producto_en_seleccion
+        producto_en_seleccion = id
+        print(producto_en_seleccion)
 
+
+    def agregar_stock():
+        def confirmar_click():
+            lista=[]
+            for talle,i in campos_stock.items():
+                if i.value:
+                     lista.append({"id":producto_en_seleccion,"color":color_seleccionado,"talle": talle, "cantidad":int(i.value)})
+
+            inventario.agregar_stock(lista)
+            page.pop_dialog()
+            agregar_stock()
+
+
+        if not producto_en_seleccion:
+            ventana_de_alerta(
+                "ERROR DE SELECCION",
+                "NO SE SELECCIONO EL PRODUCTO PARA AGREGAR STOCK"
+            )
+            return
+
+        retorno = inventario.listar_stock(producto_en_seleccion)
+
+        colores = retorno["colores"]
+        talles = retorno["talles"]
+        variantes = retorno["diccionario"]
+        color_seleccionado=None
+
+        tabla_talles = ft.Column(visible=False)
+        lista_disponibles = ft.Column(visible=False)
+
+        campos_stock = {}
+
+        def seleccionar_color(e, color):
+
+            tabla_talles.controls.clear()
+            lista_disponibles.controls.clear()
+            campos_stock.clear()
+            nonlocal color_seleccionado
+            color_seleccionado=color
+
+            variantes_color = [
+                v for v in variantes
+                if v["color"] == color
+            ]
+
+            controles_talles = []
+
+            for talle in talles:
+
+                cantidad = next(
+                    (
+                        v["cantidad"]
+                        for v in variantes_color
+                        if v["talle"] == talle
+                    ),
+                    0
+                )
+
+                campo = ft.TextField(
+                    width=45,
+                    height=40,
+                    text_size=12,
+                    content_padding=5,
+                    keyboard_type=ft.KeyboardType.NUMBER
+                )
+
+                campos_stock[talle] = campo
+
+                controles_talles.append(
+                    ft.Column(
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=5,
+                        controls=[
+                            ft.Text(
+                                talle,
+                                weight=ft.FontWeight.BOLD
+                            ),
+                            ft.Text(
+                                str(cantidad),
+                                size=12
+                            ),
+                            campo
+                        ]
+                    )
+                )
+
+            tabla_talles.controls.extend([
+                ft.Text(
+                    f"Stock de {color}",
+                    size=16,
+                    weight=ft.FontWeight.BOLD
+                ),
+                ft.Row(
+                    controls=controles_talles,
+                    alignment=ft.MainAxisAlignment.CENTER
+                )
+            ])
+
+            disponibles = [
+                v for v in variantes_color
+                if int(v["cantidad"]) > 0
+            ]
+
+            lista_disponibles.controls.append(
+                ft.Text(
+                    "Talles disponibles:",
+                    weight=ft.FontWeight.BOLD
+                )
+            )
+
+            for variante in disponibles:
+                lista_disponibles.controls.append(
+                    ft.Text(
+                        f'{variante["talle"]} → {variante["cantidad"]}'
+                    )
+                )
+
+            tabla_talles.visible = True
+            lista_disponibles.visible = True
+
+            page.update()
+
+        opciones_colores = [
+            ft.MenuItemButton(
+                content=color,
+                on_click=lambda e, c=color: seleccionar_color(e, c)
+            )
+            for color in colores
+        ]
+
+        menu_colores = ft.SubmenuButton(
+            "COLORES",
+            controls=opciones_colores
+        )
+
+        page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text("VENTANA DE STOCK"),
+                content=ft.Container(
+                    width=350,
+                    content=ft.Column(
+                        controls=[
+                            ft.Text("Seleccione color:"),
+
+                            ft.MenuBar(
+                                controls=[
+                                    menu_colores
+                                ]
+                            ),
+
+                            ft.Divider(),
+
+                            tabla_talles,
+
+                            ft.Divider(),
+
+                            lista_disponibles
+                        ]
+                    )
+                ),
+                actions=[
+                    ft.Button(
+                        "CONFIRMAR",
+                        on_click=lambda e: confirmar_click()
+                    ),
+                    ft.Button(
+                        "CANCELAR",
+                        on_click=lambda e: page.pop_dialog()
+                    )
+                ],
+                actions_alignment=ft.MainAxisAlignment.END
+            )
+        )
     def ventana_de_alerta(texto_superior, erratas):
 
         def diseño_entradas(erratas):
@@ -84,10 +261,14 @@ def main(page: ft.Page):
                     precio.value,
                     origen,
                 )
-                if retorno != None:
+                if isinstance(retorno, tuple):        
                     ventana_de_alerta(*retorno)
-                else:
+                else:                                    
                     page.pop_dialog()
+                    if check_stock.value:
+                        nonlocal producto_en_seleccion
+                        producto_en_seleccion = retorno
+                        agregar_stock()
             
         def menu_click(e, clave):
             if clave=="categorias":
@@ -111,6 +292,7 @@ def main(page: ft.Page):
         precio=ft.TextField(
              hint_text="Precio"
         )
+        check_stock = ft.Checkbox(label="Agregar stock al crear el producto", value=False)
 
         for clave, lista in elementos_diccionario.items():
             opciones=[]
@@ -150,6 +332,7 @@ def main(page: ft.Page):
                                         controls=menu_bar_controles,
                                         ),
                                     precio,
+                                    check_stock,
                                     ft.Row(
                                          controls=[
                                                 ft.Button(
@@ -218,12 +401,13 @@ def main(page: ft.Page):
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                         controls=[
                                             ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
-                                            ft.IconButton(
-                                                icon=ft.Icons.ADD_SHOPPING_CART_ROUNDED,
+                                            ft.Button(
+                                                content="Seleccionar",
+                                                icon=ft.Icons.ADS_CLICK,
                                                 icon_color=ft.Colors.BLUE_600,
                                                 tooltip="Agregar al carrito",
                                                 data=f"{p.categoria} {p.marca}",
-                                                on_click=""
+                                                on_click=lambda e, id=p.id: cambiar_seleccion(e, id)
                                             )
                                         ]
                                     )
@@ -265,7 +449,6 @@ def main(page: ft.Page):
             ventana_agregar_producto(texto_superior)
 
 
-
     grid_productos = ft.GridView(
         expand=1,
         max_extent=250,       
@@ -273,7 +456,6 @@ def main(page: ft.Page):
         spacing=20,
         run_spacing=20,
     )
-
     contenedor_izquierdo = ft.Container(
         content=ft.Column(
             controls=[
@@ -285,12 +467,14 @@ def main(page: ft.Page):
                 #ft.Button("Eliminar productos", on_click=eliminar),
                 ft.Button("Mostrar productos", on_click=mostrar),
                 #ft.Button("Modificar productos", on_click=modificar),
-                #ft.Button("Agregar stock", on_click=agregar_stock),
+                ft.Button("Agregar stock", on_click=lambda: agregar_stock()),
                 #ft.Button("Consultar estadisticas", on_click=estadisticas),
                 #ft.Button("Ver historial de compras productos", on_click=historial),
             ]
         )
     )
+
+    mostrar()
 
     page.add(
         ft.Row(

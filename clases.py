@@ -104,7 +104,7 @@ class Inventario:
                 logging.error(f"Error al copiar la imagen: {e}")
                 return ("ERROR", "EL PRODUCTO SE GUARDÓ, PERO NO SE PUDO COPIAR LA IMAGEN")
 
-        return None
+        return id_producto 
 
     @staticmethod
     def modificar_producto(id, nombre, precio):
@@ -120,10 +120,96 @@ class Inventario:
 
 
     @staticmethod
-    def agregar_stock(id, nombre, cantidad):
-        cursor.execute("UPDATE productos SET stock = stock + ? WHERE id_producto = ?",(cantidad, id))
-        logging.info(f"Se agregó {cantidad} más de stock a {nombre} en la base de datos")
+    def agregar_stock(datos):
+        cursor = conexion.cursor()
+
+        for dato in datos:
+
+            cursor.execute("""
+                SELECT id_talle_producto
+                FROM talles
+                WHERE nombre_talle = ?
+            """, (dato["talle"],))
+
+            talle = cursor.fetchone()
+
+            cursor.execute("""
+                SELECT id_color_producto
+                FROM colores
+                WHERE nombre_color = ?
+            """, (dato["color"],))
+
+            color = cursor.fetchone()
+
+            if talle is None or color is None:
+                continue
+
+            id_talle = talle[0]
+            id_color = color[0]
+
+            cursor.execute("""
+                UPDATE stock_variantes
+                SET cantidad_stock = cantidad_stock + ?
+                WHERE id_producto = ?
+                AND id_talle_producto = ?
+                AND id_color_producto = ?
+            """, (
+                dato["cantidad"],
+                dato["id"],
+                id_talle,
+                id_color
+            ))
+
+            if cursor.rowcount == 0:
+
+                cursor.execute("""
+                    INSERT INTO stock_variantes (
+                        id_producto,
+                        id_talle_producto,
+                        id_color_producto,
+                        cantidad_stock
+                    )
+                    VALUES (?, ?, ?, ?)
+                """, (
+                    dato["id"],
+                    id_talle,
+                    id_color,
+                    dato["cantidad"]
+                ))
+
         conexion.commit()
+
+    @staticmethod
+    def listar_stock(id_producto):
+        logging.info(f"Se va a mostrar el stock del producto {id_producto}")
+        cursor.execute(
+            """
+            SELECT
+                (SELECT nombre_talle FROM talles
+                    WHERE id_talle_producto = s.id_talle_producto),
+                (SELECT nombre_color FROM colores
+                    WHERE id_color_producto = s.id_color_producto),
+                s.cantidad_stock
+            FROM stock_variantes s
+            WHERE s.id_producto = ?
+            """,
+            (id_producto,),
+        )
+        lista=cursor.fetchall()
+
+        cursor.execute("SELECT nombre_talle FROM talles")
+        talles = [fila[0] for fila in cursor.fetchall()]
+
+        cursor.execute("SELECT nombre_color FROM colores")
+        colores = [fila[0] for fila in cursor.fetchall()]
+
+         
+        lista_diccionario=[]
+        for p in lista:
+            diccionario={"color":p[1],"talle":p[0],"cantidad":p[2]}
+            lista_diccionario.append(diccionario)
+
+        return {"diccionario":lista_diccionario,"talles":talles,"colores":colores}
 
     @staticmethod
     def agregar_categoria(nombre):
