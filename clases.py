@@ -10,6 +10,8 @@ conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
 cursor = conexion.cursor()
 CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"
 URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
+def limpiar_nombre(texto):
+    return re.sub(r"[^\w-]", "_", texto)
 
 class Cliente():
     def __init__(self, nombre, email, contraseña):
@@ -24,14 +26,43 @@ class Admin():
         self.email = email
 
 class Producto:
-    def __init__(self, id, categoria, marca,precio, imagen):
+    def __init__(self, id, categoria, marca, nombre, precio, imagen):
         self.id = id
         self.categoria = categoria
         self.marca = marca
+        self.nombre = nombre
         self.precio= precio
         self.imagen = imagen
 
 class Inventario:
+    @staticmethod
+    def consultar_producto_especifico(id):
+        logging.info(f"Se va a mostrar el producto con id {id}")
+        cursor.execute(
+            """
+            SELECT
+            s.id_producto,
+                (SELECT nombre_categoria FROM categorias
+                    WHERE id_categoria_producto = s.id_categoria_producto),
+                (SELECT nombre_marca FROM marcas
+                    WHERE id_marca_producto = s.id_marca_producto),
+                s.nombre_producto,
+                s.precio,
+                s.url_imagen
+            FROM productos s
+            WHERE s.id_producto = ?
+            """,
+            (id,),
+        )
+        datos=cursor.fetchall()[0]
+        return {
+            "id":datos[0],
+            "categoria":datos[1],
+            "marca":datos[2],
+            "nombre":datos[3],
+            "precio":datos[4],
+            "url":datos[5],
+        }
 
     @staticmethod
     def listar_productos():
@@ -43,6 +74,7 @@ class Inventario:
                     WHERE id_categoria_producto = p.id_categoria_producto),
                 (SELECT nombre_marca FROM marcas
                     WHERE id_marca_producto = p.id_marca_producto),
+                p.nombre_producto,
                 p.precio,
                 p.url_imagen
             FROM productos p
@@ -52,11 +84,13 @@ class Inventario:
         return [Producto(*fila) for fila in filas]
 
     @staticmethod
-    def agregar_producto(categoria, marca, precio, imagen):
-        def limpiar_nombre(texto):
-            return re.sub(r"[^\w-]", "_", texto)
+    def agregar_producto(categoria, marca, nombre_producto, precio, imagen):
         
         url_imagen = URL_IMAGEN_DEFAULT
+
+        nombre_producto = nombre_producto.strip()
+        if not nombre_producto:
+            return ("NOMBRE INVÁLIDO", "INGRESE UN NOMBRE PARA EL PRODUCTO")
 
         try:
             valor_precio = float(precio.replace(",", "."))
@@ -69,14 +103,16 @@ class Inventario:
         try:
             cursor.execute(
                 """
-                INSERT INTO productos (id_categoria_producto, id_marca_producto, precio, url_imagen)
+                INSERT INTO productos (id_categoria_producto, id_marca_producto, nombre_producto, precio, url_imagen)
                 VALUES (
                     (SELECT id_categoria_producto FROM categorias WHERE nombre_categoria = ?),
                     (SELECT id_marca_producto FROM marcas WHERE nombre_marca = ?),
-                    ?, ?
+                    ?,
+                    ?, 
+                    ?
                 )
                 """,
-                (categoria, marca, precio, url_imagen),
+                (categoria, marca, nombre_producto, precio, url_imagen),
             )
             id_producto = cursor.lastrowid          
             if imagen != None:
@@ -89,7 +125,7 @@ class Inventario:
                 )
 
             conexion.commit()
-            logging.info(f"Se insertó el producto {categoria, marca, url_imagen} en la base de datos")
+            logging.info(f"Se insertó el producto {categoria, marca,nombre_producto} en la base de datos")
 
         except Exception as e:
             conexion.rollback()
@@ -107,11 +143,94 @@ class Inventario:
         return id_producto 
 
     @staticmethod
-    def modificar_producto(id, nombre, precio):
-        cursor.execute("UPDATE productos SET nombre_producto = ?, precio = ? WHERE id_producto = ?",(nombre, precio, id))
-        logging.info(f"Nuevos valores de {nombre} en la base de datos")
-        conexion.commit()
+    def modificar_producto(id,categoria,marca,nombre,precio,url):
+        logging.info(f"{id},{categoria},{marca},{nombre},{precio},{url}")
+ 
+        nombre = nombre.strip()
+        if not nombre:
+            return ("NOMBRE INVÁLIDO", "INGRESE UN NOMBRE PARA EL PRODUCTO")
+ 
+        try:
+            valor_precio = float(str(precio).replace(",", "."))
+            if valor_precio <= 0:
+                raise ValueError
+        except ValueError:
+            return ("PRECIO INVÁLIDO", "INGRESE UN PRECIO NUMÉRICO MAYOR A 0")
+ 
+        viejos_elementos = cursor.execute(
+            """
+            SELECT 
+            (SELECT nombre_categoria FROM categorias WHERE id_categoria_producto = s.id_categoria_producto),
+            (SELECT nombre_marca FROM marcas WHERE id_marca_producto = s.id_marca_producto),
+            nombre_producto,
+            precio,
+            url_imagen
+            FROM productos s WHERE id_producto=?
+            """,
+            (id,)
+        ).fetchone()
+ 
+        if viejos_elementos is None:
+            return ("ERROR", "EL PRODUCTO NO EXISTE")
+ 
+        url_vieja = viejos_elementos[4]
+        url_imagen = url_vieja
+        imagen_nueva = url is not None and url != url_vieja
+        if imagen_nueva:
+            extension = os.path.splitext(url)[1].lower()
+            nombre_archivo = f"{limpiar_nombre(categoria)}_{limpiar_nombre(marca)}_{id}{extension}"
+            url_imagen = f"{CARPETA_IMAGENES}/{nombre_archivo}"
 
+        try:
+            precio_viejo = float(str(viejos_elementos[3]).replace(",", "."))
+        except ValueError:
+            precio_viejo = None
+        viejos = (viejos_elementos[0], viejos_elementos[1], viejos_elementos[2], precio_viejo, url_vieja)
+        nuevos = (categoria, marca, nombre, valor_precio, url_imagen)
+        if viejos == nuevos:
+            logging.info("No hubo cambios en el producto")
+            return None
+
+        if imagen_nueva:
+            try:
+                os.makedirs(CARPETA_IMAGENES, exist_ok=True)
+                shutil.copy(url, url_imagen)
+            except Exception as e:
+                logging.error(f"Error al copiar la imagen: {e}")
+                return ("ERROR", "NO SE PUDO COPIAR LA IMAGEN NUEVA")
+
+        try:
+            cursor.execute(
+                """
+                UPDATE productos
+                SET id_categoria_producto = (SELECT id_categoria_producto FROM categorias WHERE nombre_categoria = ?),
+                    id_marca_producto = (SELECT id_marca_producto FROM marcas WHERE nombre_marca = ?),
+                    nombre_producto = ?,
+                    precio = ?,
+                    url_imagen = ?
+                WHERE id_producto = ?
+                """,
+                (categoria, marca, nombre, valor_precio, url_imagen, id),
+            )
+            conexion.commit()
+            logging.info(f"Se modificó el producto {id}")
+        except Exception as e:
+            conexion.rollback()
+            logging.error(f"Error al modificar producto: {e}")
+            return ("ERROR", "EL PRODUCTO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
+
+        if (
+            imagen_nueva
+            and url_vieja
+            and url_vieja != url_imagen
+            and url_vieja != URL_IMAGEN_DEFAULT
+            and os.path.exists(url_vieja)
+        ):
+            os.remove(url_vieja)
+ 
+        return None
+         
+        
     @staticmethod
     def eliminar_producto(id):
         try:

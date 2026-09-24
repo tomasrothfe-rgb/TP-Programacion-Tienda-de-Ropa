@@ -37,6 +37,7 @@ def creacion_bd():
             id_producto INTEGER PRIMARY KEY AUTOINCREMENT,
             id_categoria_producto INTEGER,
             id_marca_producto INTEGER,
+            nombre_producto,
             precio REAL NOT NULL,
             url_imagen TEXT,
             FOREIGN KEY (id_categoria_producto) REFERENCES categorias(id_categoria_producto),
@@ -119,5 +120,5 @@ def insertar():
     )
     conexion.commit()  
 
-insertar()
+creacion_bd()
 
