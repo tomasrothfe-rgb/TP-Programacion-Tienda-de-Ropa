@@ -286,21 +286,17 @@ class Inventario:
         try:
             cursor = conexion.cursor()
 
-            print("DATOS RECIBIDOS:", datos)
-
             for dato in datos:
 
-                print("PROCESANDO:", dato)
-
+                if int(dato["cantidad"]) < 0:
+                    raise ValueError("El valor de la cantidad debe ser mayor o igual 0")
+                
                 cursor.execute("""
                     SELECT id_talle_producto
                     FROM talles
                     WHERE nombre_talle = ?
                 """, (dato["talle"],))
-
                 talle = cursor.fetchone()
-
-                print("ID TALLE:", talle)
 
                 cursor.execute("""
                     SELECT id_color_producto
@@ -309,11 +305,6 @@ class Inventario:
                 """, (dato["color"],))
 
                 color = cursor.fetchone()
-
-                print("ID COLOR:", color)
-
-                if talle is None or color is None:
-                    raise ValueError("El talle o color no existe")
 
                 id_talle = talle[0]
                 id_color = color[0]
@@ -331,12 +322,7 @@ class Inventario:
                     id_color
                 ))
 
-                print("FILAS ACTUALIZADAS:", cursor.rowcount)
-
                 if cursor.rowcount == 0:
-
-                    print("NO EXISTE, INSERTANDO...")
-
                     cursor.execute("""
                         INSERT INTO stock_variantes (
                             id_producto,
@@ -352,27 +338,15 @@ class Inventario:
                         int(dato["cantidad"])
                     ))
 
-                    print("INSERTADO")
-
             conexion.commit()
-
-            print("COMMIT REALIZADO")
-
             logging.info("Se agregó stock correctamente")
-
             return None
 
         except Exception as e:
             conexion.rollback()
-
-            print("ERROR:", e)
-
             logging.error(f"Error al ingresar stock: {e}")
-
-            return (
-                "ERROR AL INGRESAR STOCK",
-                "ASEGURESE DE INGRESAR BIEN LOS DATOS DE STOCK"
-            )
+            return ("ERROR AL INGRESAR STOCK","ASEGURESE DE INGRESAR BIEN LOS DATOS DE STOCK")
+        
     @staticmethod
     def listar_stock(id_producto):
         logging.info(f"Se va a mostrar el stock del producto {id_producto}")

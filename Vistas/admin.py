@@ -647,11 +647,8 @@ def main(page: ft.Page):
                     ],
                     spacing=0,
                 ),
-                border=ft.Border(
-                    top=ft.BorderSide(1, ft.Colors.GREY_300),
-                    bottom=ft.BorderSide(1, ft.Colors.GREY_300),
-                    left=ft.BorderSide(1, ft.Colors.GREY_300),
-                    right=ft.BorderSide(1, ft.Colors.GREY_300)
+                border=ft.Border.all(
+                    1, ft.Colors.GREY_300
                 ),
                 border_radius=12,
                 bgcolor=ft.Colors.WHITE,
@@ -663,7 +660,6 @@ def main(page: ft.Page):
             )
             
             tarjeta_producto.on_click = lambda e, id=p.id, tc=tarjeta_producto: cambiar_seleccion(e, id, tc)
-
             grid_productos.controls.append(tarjeta_producto)
 
         page.update()

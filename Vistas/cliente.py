@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main(page: ft.Page):
-    page.title = "Panel de Administrador "
+    page.title = "Panel de Cliente"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.window.width = 700
@@ -20,8 +20,9 @@ def main(page: ft.Page):
     inventario = Inventario()
 
     def mostrar():
-        lista_productos=inventario.listar_productos()
+        lista_productos = inventario.listar_productos()
         grid_productos.controls.clear()
+        
         for p in lista_productos:
             tarjeta_producto = ft.Container(
                 content=ft.Column(
@@ -42,14 +43,6 @@ def main(page: ft.Page):
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                         controls=[
                                             ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
-                                            ft.Button(
-                                                content="Seleccionar",
-                                                icon=ft.Icons.ADS_CLICK,
-                                                icon_color=ft.Colors.BLUE_600,
-                                                tooltip="Agregar al carrito",
-                                                data=p.nombre,
-                                                on_click=lambda e, id=p.id: print(e, id)
-                                            )
                                         ]
                                     )
                                 ],
@@ -59,14 +52,13 @@ def main(page: ft.Page):
                     ],
                     spacing=0,
                 ),
-                border=ft.Border(
-                    top=ft.BorderSide(1, ft.Colors.GREY_300),
-                    bottom=ft.BorderSide(1, ft.Colors.GREY_300),
-                    left=ft.BorderSide(1, ft.Colors.GREY_300),
-                    right=ft.BorderSide(1, ft.Colors.GREY_300)
+                border=ft.Border.all(
+                    1, ft.Colors.GREY_300
                 ),
                 border_radius=12,
                 bgcolor=ft.Colors.WHITE,
+                ink=True, 
+                on_click=lambda e, producto=p: seleccionar_producto(producto), 
                 shadow=ft.BoxShadow(
                     blur_radius=10,
                     color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
@@ -77,8 +69,13 @@ def main(page: ft.Page):
             grid_productos.controls.append(tarjeta_producto)
 
         page.update()
+
+    def seleccionar_producto(producto):
+        logging.info(f"Click en el producto: {producto.nombre} (ID: {producto.id})")
+        print(inventario.listar_stock(producto.id))
+
+        page.update()
             
-    
     grid_productos = ft.GridView(
         expand=1,
         max_extent=250,       
@@ -86,29 +83,26 @@ def main(page: ft.Page):
         spacing=20,
         run_spacing=20,
     )
+    
     contenedor_izquierdo = ft.Container(
         content=ft.Column(
             controls=[
-                ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.Button("Mostrar productos", on_click=lambda: mostrar()),
-
+                ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
+                ft.Button("Mostrar productos", on_click=lambda e: mostrar()),
             ]
         )
     )
 
-    
     page.add(
         ft.Row(
             controls=[
                 contenedor_izquierdo,
                 grid_productos,
-                      ],
+            ],
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,
         )
-        
     )
-
 
 ft.app(target=main)
