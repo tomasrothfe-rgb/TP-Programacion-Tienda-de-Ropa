@@ -19,11 +19,7 @@ def main(page: ft.Page):
 
     inventario = Inventario()
     producto_en_seleccion = None
-
-    def cambiar_seleccion(e, id):
-        nonlocal producto_en_seleccion
-        producto_en_seleccion = id
-        print(producto_en_seleccion)
+    tarjeta_seleccionada_ref = None
 
     def modificar():
         if producto_en_seleccion is None:
@@ -594,9 +590,38 @@ def main(page: ft.Page):
                         ],
                     actions_alignment=ft.MainAxisAlignment.END,))
 
+    def cambiar_seleccion(e, id, tarjeta_container):
+        nonlocal producto_en_seleccion, tarjeta_seleccionada_ref
+
+        if tarjeta_seleccionada_ref is not None:
+            tarjeta_seleccionada_ref.bgcolor = ft.Colors.WHITE
+            tarjeta_seleccionada_ref.border = ft.Border(
+                top=ft.BorderSide(1, ft.Colors.GREY_300),
+                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                left=ft.BorderSide(1, ft.Colors.GREY_300),
+                right=ft.BorderSide(1, ft.Colors.GREY_300)
+            )
+
+        producto_en_seleccion = id
+        tarjeta_seleccionada_ref = tarjeta_container
+
+        tarjeta_seleccionada_ref.bgcolor = ft.Colors.BLUE_50
+        tarjeta_seleccionada_ref.border = ft.Border(
+            top=ft.BorderSide(2, ft.Colors.BLUE_600),
+            bottom=ft.BorderSide(2, ft.Colors.BLUE_600),
+            left=ft.BorderSide(2, ft.Colors.BLUE_600),
+            right=ft.BorderSide(2, ft.Colors.BLUE_600)
+        )
+
+        page.update()
+        print(f"Producto seleccionado ID: {producto_en_seleccion}")
+
     def mostrar():
-        lista_productos=inventario.listar_productos()
+        nonlocal tarjeta_seleccionada_ref
+        tarjeta_seleccionada_ref = None
+        lista_productos = inventario.listar_productos()
         grid_productos.controls.clear()
+        
         for p in lista_productos:
             tarjeta_producto = ft.Container(
                 content=ft.Column(
@@ -613,20 +638,8 @@ def main(page: ft.Page):
                                 controls=[
                                     ft.Text(p.nombre, weight=ft.FontWeight.BOLD, size=16, max_lines=1),
                                     ft.Text(f"{p.categoria} · {p.marca}", size=12, color=ft.Colors.GREY_700, max_lines=1),
-                                    ft.Row(
-                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                                        controls=[
-                                            ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
-                                            ft.Button(
-                                                content="Seleccionar",
-                                                icon=ft.Icons.ADS_CLICK,
-                                                icon_color=ft.Colors.BLUE_600,
-                                                tooltip="Agregar al carrito",
-                                                data=p.nombre,
-                                                on_click=lambda e, id=p.id: cambiar_seleccion(e, id)
-                                            )
-                                        ]
-                                    )
+                                    ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
+
                                 ],
                                 spacing=5
                             )
@@ -649,6 +662,8 @@ def main(page: ft.Page):
                 ),
             )
             
+            tarjeta_producto.on_click = lambda e, id=p.id, tc=tarjeta_producto: cambiar_seleccion(e, id, tc)
+
             grid_productos.controls.append(tarjeta_producto)
 
         page.update()

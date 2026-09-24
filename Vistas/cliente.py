@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from conexion_bd import creacion_bd, mostrar_productos
+from clases import Inventario  
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,105 +17,91 @@ def main(page: ft.Page):
     page.window.width = 700
     page.window.height = 500
 
-    lista_productos=[]
-    carrito_letras=0
+    inventario = Inventario()
 
-    def eliminar_del_carrito(p):
-        nonlocal lista_productos
-        nonlocal carrito_letras
-        lista_productos.remove(p)
-        carrito_letras-=1
-        carrito.value=str(carrito_letras)
-        mostrar_carrito()
+    def mostrar():
+        lista_productos=inventario.listar_productos()
+        grid_productos.controls.clear()
+        for p in lista_productos:
+            tarjeta_producto = ft.Container(
+                content=ft.Column(
+                    controls=[
+                        ft.Image(
+                            src=p.imagen,
+                            border_radius=10,
+                            fit="cover",
+                            expand=True 
+                        ),
+                        ft.Container(
+                            padding=10,
+                            content=ft.Column(
+                                controls=[
+                                    ft.Text(p.nombre, weight=ft.FontWeight.BOLD, size=16, max_lines=1),
+                                    ft.Text(f"{p.categoria} · {p.marca}", size=12, color=ft.Colors.GREY_700, max_lines=1),
+                                    ft.Row(
+                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                        controls=[
+                                            ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
+                                            ft.Button(
+                                                content="Seleccionar",
+                                                icon=ft.Icons.ADS_CLICK,
+                                                icon_color=ft.Colors.BLUE_600,
+                                                tooltip="Agregar al carrito",
+                                                data=p.nombre,
+                                                on_click=lambda e, id=p.id: print(e, id)
+                                            )
+                                        ]
+                                    )
+                                ],
+                                spacing=5
+                            )
+                        )
+                    ],
+                    spacing=0,
+                ),
+                border=ft.Border(
+                    top=ft.BorderSide(1, ft.Colors.GREY_300),
+                    bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                    left=ft.BorderSide(1, ft.Colors.GREY_300),
+                    right=ft.BorderSide(1, ft.Colors.GREY_300)
+                ),
+                border_radius=12,
+                bgcolor=ft.Colors.WHITE,
+                shadow=ft.BoxShadow(
+                    blur_radius=10,
+                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                    offset=ft.Offset(0, 4)
+                ),
+            )
+            
+            grid_productos.controls.append(tarjeta_producto)
 
-    def agregar_al_carrito(p):
-        nonlocal lista_productos
-        nonlocal carrito_letras
-        if p in lista_productos:
-            print("sumar")
-        else:
-            lista_productos.append(p)
-        carrito_letras+=1
-        carrito.value=str(carrito_letras)
         page.update()
-
-    def mostrar_pantalla_productos():
-        productos=mostrar_productos()
-        lista_derecha.content.controls.clear()
-        for producto in productos:
-               lista_derecha.content.controls.append(
-                      ft.ListTile(title=producto[1], subtitle=(f"Precio: {producto[2]}       Stock: {producto[3]}"),trailing=ft.IconButton(
-        icon=ft.Icons.PLUS_ONE,
-        icon_color=ft.Colors.BLACK,
-        on_click=lambda e, p=producto: agregar_al_carrito(p))
-    ))
-                      
-        page.update()
-
-    def mostrar_carrito():
-        nonlocal lista_productos
-        productos=lista_productos
-        lista_derecha.content.controls.clear()
-        for producto in productos:
-               lista_derecha.content.controls.append(
-                      ft.ListTile(title=producto[1], subtitle=(f"Precio: {producto[2]}       Stock: {producto[3]}"),trailing=ft.IconButton(
-        icon=ft.Icons.EXPOSURE_MINUS_1,
-        icon_color=ft.Colors.BLACK,
-        on_click=lambda e, p=producto: eliminar_del_carrito(p)))
-    )
-                      
-        page.update()
-
+            
     
-    carrito=ft.Text(str(carrito_letras))
-    
-    lista_derecha= ft.Container(
-           content=ft.ListView(expand=1, spacing=10, padding=20,),
-           bgcolor= ft.Colors.GREY,
-           expand=True
+    grid_productos = ft.GridView(
+        expand=1,
+        max_extent=250,       
+        child_aspect_ratio=0.8, 
+        spacing=20,
+        run_spacing=20,
     )
-
-    contenedor_principal=ft.Container(
+    contenedor_izquierdo = ft.Container(
         content=ft.Column(
-               controls=[
-                      ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.Button(
-                    "Ver carrito de compras",
-                    on_click=lambda e:mostrar_carrito(), 
-                ),
-                ft.Button(
-                    "Ver tienda",
-                    on_click=lambda e:mostrar_pantalla_productos(), 
-                ),
-                ft.Button(
-                    "Comprar",
-                    on_click=lambda e:print("Comprar"),
-                ),
-                ft.Button(
-                    "Modificar Datos personales",
-                    on_click=lambda e:print("Datos"),
-                    ),
-                ft.Button(
-                    "Historial de compra",
-                    on_click=lambda e:print("Historial"),
-                )
-               ]
+            controls=[
+                ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
+                ft.Button("Mostrar productos", on_click=lambda: mostrar()),
+
+            ]
         )
     )
 
-    mostrar_pantalla_productos()
     
     page.add(
         ft.Row(
             controls=[
-                contenedor_principal,
-                lista_derecha,
-                ft.Row(
-                    controls=[
-                    carrito,
-                    ft.Icon(ft.Icons.SHOPPING_BAG)
-                ]
-    ),
+                contenedor_izquierdo,
+                grid_productos,
                       ],
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
             vertical_alignment=ft.CrossAxisAlignment.START,

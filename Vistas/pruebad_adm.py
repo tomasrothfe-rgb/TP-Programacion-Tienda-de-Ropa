@@ -1,79 +1,112 @@
 import flet as ft
+import logging 
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from clases import Inventario  
+
+logging.basicConfig(level=logging.INFO)
 
 
 def main(page: ft.Page):
-    page.title = "Demo Flet - Tabs con botón"
-    page.window.width = 420
-    page.window.height = 420
+    page.title = "Panel de Administrador"
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.window.width = 700
+    page.window.height = 500
 
-    # --- Vistas de cada pestaña ---
-    vista_inicio = ft.Container(
-        content=ft.Text("👋 Bienvenido a la vista de Inicio", size=18),
-        alignment=ft.Alignment.CENTER,
-        padding=20,
+    inventario = Inventario()
+
+    def mostrar():
+        lista_productos = inventario.listar_productos()
+        grid_productos.controls.clear()
+        
+        for p in lista_productos:
+            tarjeta_producto = ft.Container(
+                content=ft.Column(
+                    controls=[
+                        ft.Image(
+                            src=p.imagen,
+                            border_radius=10,
+                            fit="cover",
+                            expand=True 
+                        ),
+                        ft.Container(
+                            padding=10,
+                            content=ft.Column(
+                                controls=[
+                                    ft.Text(p.nombre, weight=ft.FontWeight.BOLD, size=16, max_lines=1),
+                                    ft.Text(f"{p.categoria} · {p.marca}", size=12, color=ft.Colors.GREY_700, max_lines=1),
+                                    ft.Row(
+                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                        controls=[
+                                            ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
+                                        ]
+                                    )
+                                ],
+                                spacing=5
+                            )
+                        )
+                    ],
+                    spacing=0,
+                ),
+                border=ft.Border(
+                    top=ft.BorderSide(1, ft.Colors.GREY_300),
+                    bottom=ft.BorderSide(1, ft.Colors.GREY_300),
+                    left=ft.BorderSide(1, ft.Colors.GREY_300),
+                    right=ft.BorderSide(1, ft.Colors.GREY_300)
+                ),
+                border_radius=12,
+                bgcolor=ft.Colors.WHITE,
+                ink=True, 
+                on_click=lambda e, producto=p: manejar_clic_producto(producto), 
+                shadow=ft.BoxShadow(
+                    blur_radius=10,
+                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                    offset=ft.Offset(0, 4)
+                ),
+            )
+            
+            grid_productos.controls.append(tarjeta_producto)
+
+        page.update()
+
+    def manejar_clic_producto(producto):
+        print(f"Hiciste clic en el producto: {producto.nombre} (ID: {producto.id})")
+        
+        page.snack_bar = ft.SnackBar(ft.Text(f"Seleccionaste: {producto.nombre}"))
+        page.snack_bar.open = True
+        page.update()
+            
+    grid_productos = ft.GridView(
+        expand=1,
+        max_extent=250,       
+        child_aspect_ratio=0.8, 
+        spacing=20,
+        run_spacing=20,
     )
-
-    vista_datos = ft.Container(
-        content=ft.Text("📊 Acá irían tus datos o tabla", size=18),
-        alignment=ft.Alignment.CENTER,
-        padding=20,
-    )
-
-    vista_config = ft.Container(
-        content=ft.Text("⚙️ Configuración de la app", size=18),
-        alignment=ft.Alignment.CENTER,
-        padding=20,
-    )
-
-    # --- Barra de pestañas (solo encabezados) ---
-    tab_bar = ft.TabBar(
-        tabs=[
-            ft.Tab(label="Inicio"),
-            ft.Tab(label="Datos"),
-            ft.Tab(label="Config"),
-        ],
-    )
-
-    # --- Contenido de cada pestaña ---
-    tab_view = ft.TabBarView(
-        expand=True,
-        controls=[vista_inicio, vista_datos, vista_config],
-    )
-
-    tabs = ft.Tabs(
-        length=3,
-        selected_index=0,
-        expand=True,
+    
+    contenedor_izquierdo = ft.Container(
         content=ft.Column(
-            expand=True,
-            controls=[tab_bar, tab_view],
-        ),
-    )
-
-    # --- Botón: pasa a la siguiente pestaña ---
-    async def siguiente_vista(e):
-        siguiente = (tabs.selected_index + 1) % tabs.length
-        await tabs.move_to(index=siguiente)
-
-    boton_cambiar = ft.Button(
-        content="Cambiar de vista ➜",
-        icon=ft.Icons.SWAP_HORIZ,
-        on_click=siguiente_vista,
-    )
-
-    # --- Layout final ---
-    page.add(
-        ft.Column(
-            expand=True,
             controls=[
-                tabs,
-                ft.Divider(),
-                boton_cambiar,
-            ],
+                ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
+                ft.Button("Mostrar productos", on_click=lambda e: mostrar()),
+            ]
         )
     )
 
+    page.add(
+        ft.Row(
+            controls=[
+                contenedor_izquierdo,
+                grid_productos,
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_AROUND,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            expand=True,
+        )
+    )
 
-if __name__ == "__main__":
-    ft.run(main)
+ft.app(target=main)
