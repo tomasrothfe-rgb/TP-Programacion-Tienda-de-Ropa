@@ -230,7 +230,6 @@ class Inventario:
  
         return None
          
-        
     @staticmethod
     def eliminar_producto(id):
         try:
@@ -364,20 +363,13 @@ class Inventario:
             (id_producto,),
         )
         lista=cursor.fetchall()
-
-        cursor.execute("SELECT nombre_talle FROM talles")
-        talles = [fila[0] for fila in cursor.fetchall()]
-
-        cursor.execute("SELECT nombre_color FROM colores")
-        colores = [fila[0] for fila in cursor.fetchall()]
-
          
         lista_diccionario=[]
         for p in lista:
             diccionario={"color":p[1],"talle":p[0],"cantidad":p[2]}
             lista_diccionario.append(diccionario)
 
-        return {"diccionario":lista_diccionario,"talles":talles,"colores":colores}
+        return {"diccionario":lista_diccionario}
 
     @staticmethod
     def agregar_categoria(nombre):
