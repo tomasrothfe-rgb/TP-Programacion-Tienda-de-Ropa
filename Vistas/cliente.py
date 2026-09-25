@@ -15,10 +15,14 @@ def main(page: ft.Page):
     page.title = "Panel de Cliente"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 700
+    page.window.width = 1500
     page.window.height = 500
 
     inventario = Inventario()
+    producto_seleccionado={"id":None,"color":None,"talle":None}
+
+    def seleccionar_producto():
+            print(producto_seleccionado)
 
     def mostrar():
         lista_productos = inventario.listar_productos()
@@ -71,20 +75,28 @@ def main(page: ft.Page):
 
         contenedor_derecho.content=grid_productos
         page.update()
-
+    
     def mostrar_producto(producto):
         logging.info(f"Click en el producto: {producto.nombre} (ID: {producto.id})")
         stock = inventario.listar_stock(producto.id)
+        producto_seleccionado["id"]=producto.id
         contenedor_derecho.content = None
         contenedor_botones = ft.Row(controls=[])
         contenedor_talles = ft.Row(controls=[])  
 
         def seleccion_talle(e, talle):
-            print(talle)
+            nonlocal producto_seleccionado
+            producto_seleccionado["talle"]=talle
+            boton_carrito.disabled=False
+            page.update()
 
-        def seleccion_color(e, color):
-            contenedor_talles.controls.clear() 
-            for i in color:
+        def seleccion_color(e, color,color_datos):
+            contenedor_talles.controls.clear()
+            nonlocal producto_seleccionado
+            boton_carrito.disabled=True
+            producto_seleccionado["talle"]=None
+            producto_seleccionado["color"]=color
+            for i in color_datos:
                 contenedor_talles.controls.append(
                     ft.Button(
                         content=i[0],
@@ -105,7 +117,7 @@ def main(page: ft.Page):
             for clave, datos in agrupado.items():
                 contenedor_botones.controls.append(ft.Button(
                     content=clave,
-                    on_click=lambda e, d=datos: seleccion_color(e, d)
+                    on_click=lambda e, c=clave,d=datos: seleccion_color(e,c, d)
                 ))
 
         informacion_producto = ft.Column(
@@ -119,10 +131,18 @@ def main(page: ft.Page):
         )
         imagen = ft.Image(src=producto.imagen, fit=ft.BoxFit.COVER)
 
+        boton_carrito=ft.Button(
+            content="Agregar al carrito",
+            icon=ft.Icons.SHOP,
+            disabled=True,
+            on_click=lambda e:seleccionar_producto()
+        )
+
         pagina_producto = ft.Row(
             controls=[
                 imagen,
-                informacion_producto
+                informacion_producto,
+                boton_carrito,
             ]
         )
         contenedor_derecho.content = ft.Container(
