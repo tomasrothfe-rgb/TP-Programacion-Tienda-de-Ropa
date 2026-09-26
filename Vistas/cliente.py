@@ -19,10 +19,9 @@ def main(page: ft.Page):
     page.window.height = 500
 
     inventario = Inventario()
-    producto_seleccionado={"id":None,"color":None,"talle":None}
+    producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}
 
-    def seleccionar_producto():
-            print(producto_seleccionado)
+    
 
     def mostrar():
         lista_productos = inventario.listar_productos()
@@ -79,31 +78,58 @@ def main(page: ft.Page):
     def mostrar_producto(producto):
         logging.info(f"Click en el producto: {producto.nombre} (ID: {producto.id})")
         stock = inventario.listar_stock(producto.id)
-        producto_seleccionado["id"]=producto.id
+        producto_seleccionado["id"] = producto.id
         contenedor_derecho.content = None
         contenedor_botones = ft.Row(controls=[])
-        contenedor_talles = ft.Row(controls=[])  
+        contenedor_talles = ft.Row(controls=[])
 
-        def seleccion_talle(e, talle):
-            nonlocal producto_seleccionado
-            producto_seleccionado["talle"]=talle
-            boton_carrito.disabled=False
+        def seleccionar_producto():
+            producto_seleccionado["cantidad"] = int(txt_cantidad.value)
+            print(producto_seleccionado)
+
+        def modificar_contador(e, delta: int):
+            cantidad_disponible = producto_seleccionado["talle"][1]  
+            nuevo_valor = int(txt_cantidad.value) + delta
+
+            if nuevo_valor > cantidad_disponible:
+                txt_error_cantidad.value = f"Solo hay {cantidad_disponible} unidades disponibles."
+            elif nuevo_valor < 1:
+                txt_error_cantidad.value = ""
+            else:
+                txt_cantidad.value = str(nuevo_valor)
+                txt_error_cantidad.value = ""
+
             page.update()
 
-        def seleccion_color(e, color,color_datos):
+        def seleccion_talle(e, talle, cantidad_talle):
+            nonlocal producto_seleccionado
+            producto_seleccionado["talle"] = (talle, cantidad_talle)
+            boton_carrito.disabled = False
+            stock_color_talle.value = f"Cantidad de stock {cantidad_talle}"
+            stock_color_talle.visible = True
+
+            txt_cantidad.value = "1"
+            txt_error_cantidad.value = ""
+            contador_cantidad.visible = True
+
+            page.update()
+
+        def seleccion_color(e, color, color_datos):
             contenedor_talles.controls.clear()
             nonlocal producto_seleccionado
-            boton_carrito.disabled=True
-            producto_seleccionado["talle"]=None
-            producto_seleccionado["color"]=color
+            boton_carrito.disabled = True
+            stock_color_talle.visible = False
+            contador_cantidad.visible = False  
+            producto_seleccionado["talle"] = None
+            producto_seleccionado["color"] = color
             for i in color_datos:
                 contenedor_talles.controls.append(
                     ft.Button(
                         content=i[0],
-                        on_click=lambda e, t=i[1]: seleccion_talle(e, t)
+                        on_click=lambda e, t=i[0], ct=i[1]: seleccion_talle(e, t, ct)
                     )
                 )
-            page.update() 
+            page.update()
 
         if not stock["diccionario"]:
             contenedor_botones.controls.append(
@@ -117,8 +143,21 @@ def main(page: ft.Page):
             for clave, datos in agrupado.items():
                 contenedor_botones.controls.append(ft.Button(
                     content=clave,
-                    on_click=lambda e, c=clave,d=datos: seleccion_color(e,c, d)
+                    on_click=lambda e, c=clave, d=datos: seleccion_color(e, c, d)
                 ))
+
+        txt_cantidad = ft.Text(value="1", size=30, weight=ft.FontWeight.BOLD)
+        txt_error_cantidad = ft.Text(value="", color=ft.Colors.RED_400, size=12)
+        btn_menos = ft.ElevatedButton("-", on_click=lambda e: modificar_contador(e, -1), width=40)
+        btn_mas = ft.ElevatedButton("+", on_click=lambda e: modificar_contador(e, 1), width=40)
+
+        contador_cantidad = ft.Column(
+            visible=False,
+            controls=[
+                ft.Row(controls=[btn_menos, txt_cantidad, btn_mas]),
+                txt_error_cantidad,
+            ]
+        )
 
         informacion_producto = ft.Column(
             controls=[
@@ -126,23 +165,35 @@ def main(page: ft.Page):
                 ft.Text(f"{producto.precio}"),
                 ft.Text("Colores:"),
                 contenedor_botones,
-                contenedor_talles, 
+                contenedor_talles,
             ]
         )
         imagen = ft.Image(src=producto.imagen, fit=ft.BoxFit.COVER)
 
-        boton_carrito=ft.Button(
+        boton_carrito = ft.Button(
             content="Agregar al carrito",
             icon=ft.Icons.SHOP,
             disabled=True,
-            on_click=lambda e:seleccionar_producto()
+            on_click=lambda e: seleccionar_producto()
+        )
+
+        stock_color_talle = ft.Text(visible=False)
+
+        panel_compra = ft.Column(
+            controls=[
+                stock_color_talle,
+                contador_cantidad,
+                boton_carrito,
+            ],
+            width=250,  
+            spacing=10,
         )
 
         pagina_producto = ft.Row(
             controls=[
                 imagen,
                 informacion_producto,
-                boton_carrito,
+                panel_compra,
             ]
         )
         contenedor_derecho.content = ft.Container(
