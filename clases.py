@@ -65,10 +65,8 @@ class Inventario:
         }
 
     @staticmethod
-    def listar_productos():
-        logging.info("Se va a mostrar los productos")
-        cursor.execute(
-            """
+    def listar_productos(producto):
+        consulta = """
             SELECT p.id_producto,
                 (SELECT nombre_categoria FROM categorias
                     WHERE id_categoria_producto = p.id_categoria_producto),
@@ -78,8 +76,21 @@ class Inventario:
                 p.precio,
                 p.url_imagen
             FROM productos p
+        """
+        parametros = ()
+
+        if producto is None:
+            logging.info("Se van a mostrar todos los productos")
+        else:
+            logging.info(f"Se van a mostrar los productos con categoria {producto}")
+            consulta += """
+            WHERE p.id_categoria_producto =
+                (SELECT id_categoria_producto FROM categorias
+                    WHERE nombre_categoria = ?)
             """
-        )
+            parametros = (producto,)
+
+        cursor.execute(consulta, parametros)
         filas = cursor.fetchall()
         return [Producto(*fila) for fila in filas]
 

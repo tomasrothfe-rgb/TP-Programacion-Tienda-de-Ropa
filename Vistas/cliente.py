@@ -21,10 +21,8 @@ def main(page: ft.Page):
     inventario = Inventario()
     producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}
 
-    
-
-    def mostrar():
-        lista_productos = inventario.listar_productos()
+    def mostrar(producto):
+        lista_productos = inventario.listar_productos(producto)
         contenedor_derecho.content=None
         grid_productos.controls.clear()
         
@@ -148,8 +146,8 @@ def main(page: ft.Page):
 
         txt_cantidad = ft.Text(value="1", size=30, weight=ft.FontWeight.BOLD)
         txt_error_cantidad = ft.Text(value="", color=ft.Colors.RED_400, size=12)
-        btn_menos = ft.ElevatedButton("-", on_click=lambda e: modificar_contador(e, -1), width=40)
-        btn_mas = ft.ElevatedButton("+", on_click=lambda e: modificar_contador(e, 1), width=40)
+        btn_menos = ft.Button("-", on_click=lambda e: modificar_contador(e, -1), width=40)
+        btn_mas = ft.Button("+", on_click=lambda e: modificar_contador(e, 1), width=40)
 
         contador_cantidad = ft.Column(
             visible=False,
@@ -201,7 +199,24 @@ def main(page: ft.Page):
         )
 
         page.update()
-            
+
+    def botones_filtro():
+        categorias = inventario.listar_elementos_producto()[0]
+
+        elementos=[]
+
+        for i in categorias:
+            elementos.append(ft.Button(
+                content=i,
+                on_click=lambda e, item=i: mostrar(item)
+            )
+        )
+        return elementos
+
+    filtro= ft.Column(
+        controls=botones_filtro()
+    )
+
     grid_productos = ft.GridView(
         expand=1,
         max_extent=250,       
@@ -219,12 +234,11 @@ def main(page: ft.Page):
         content=ft.Column(
             controls=[
                 ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.Button("Mostrar productos", on_click=lambda e: mostrar()),
+                ft.Button("TODOS", on_click=lambda e: mostrar(None)),
+                filtro     
             ]
         )
     )
-
-    mostrar()
 
     page.add(
         ft.Row(
