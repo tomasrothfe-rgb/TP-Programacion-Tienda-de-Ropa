@@ -23,6 +23,9 @@ def main(page: ft.Page):
     inventario = Inventario()
     producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}
     carrito= Carrito(1)
+
+    def compra():
+        print()
     
     def ventana_de_alerta(texto_superior, erratas):
 
@@ -47,6 +50,7 @@ def main(page: ft.Page):
     def actualizar_carrito():
         columna_carrito.controls.clear()
         lista=carrito.listar_carrito()
+        total_carrito.value=0
         lista_controls=[]
         contador=0
         for i in lista:
@@ -73,6 +77,7 @@ def main(page: ft.Page):
                     )
                 )
             )
+            total_carrito.value+=int(info["precio"]*int(i[5]))
 
         columna_carrito.controls.extend(lista_controls)
         page.update()
@@ -293,14 +298,16 @@ def main(page: ft.Page):
     columna_carrito=ft.ListView(
         controls=[]
     )
+    total_carrito=ft.Text()
     page.end_drawer = ft.NavigationDrawer(
         controls=[
             ft.Text("CARRITO DE COMPRAS"),
             columna_carrito,
             ft.Divider(thickness=1),
+            total_carrito,
             ft.Button(
                 content="Comprar",
-                on_click=lambda: print("hola")
+                on_click=lambda: compra()
             )
         ],
     ) 
