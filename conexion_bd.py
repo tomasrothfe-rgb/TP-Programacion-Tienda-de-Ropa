@@ -120,5 +120,22 @@ def insertar():
     )
     conexion.commit()  
 
-creacion_bd()
 
+def carrito():
+    cursor.execute(
+        """ CREATE TABLE productos_carrito (
+    id_item         INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario     INTEGER NOT NULL,
+    id_producto     INTEGER NOT NULL,
+    color           TEXT NOT NULL,
+    talle           TEXT NOT NULL,
+    cantidad        INTEGER NOT NULL CHECK (cantidad > 0),
+    FOREIGN KEY (id_usuario)  REFERENCES usuarios(id_usuario),
+    FOREIGN KEY (id_producto) REFERENCES productos(id_producto),
+    UNIQUE (id_usuario, id_producto, color, talle)
+);"""
+    )
+
+
+
+carrito()

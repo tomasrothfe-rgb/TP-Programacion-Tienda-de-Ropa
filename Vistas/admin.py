@@ -77,7 +77,7 @@ def main(page: ft.Page):
                     ventana_de_alerta(*retorno)
                 else:                                    
                     page.pop_dialog()
-                    mostrar()
+                    mostrar(None)
           
             
         def menu_click(e, clave):
@@ -182,7 +182,7 @@ def main(page: ft.Page):
                  ventana_de_alerta(*retorno)
                  return
              producto_en_seleccion = None
-             mostrar()
+             mostrar(None)
 
         if producto_en_seleccion==None:
             ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA ELIMINAR")
@@ -449,7 +449,7 @@ def main(page: ft.Page):
                     ventana_de_alerta(*retorno)
                 else:                                    
                     page.pop_dialog()
-                    mostrar()
+                    mostrar(None)
                     if check_stock.value:
                         nonlocal producto_en_seleccion
                         producto_en_seleccion = retorno
@@ -600,10 +600,10 @@ def main(page: ft.Page):
         page.update()
         print(f"Producto seleccionado ID: {producto_en_seleccion}")
 
-    def mostrar():
+    def mostrar(producto):
         nonlocal tarjeta_seleccionada_ref
         tarjeta_seleccionada_ref = None
-        lista_productos = inventario.listar_productos()
+        lista_productos = inventario.listar_productos(producto)
         grid_productos.controls.clear()
         
         for p in lista_productos:
@@ -677,7 +677,7 @@ def main(page: ft.Page):
                 ft.Button("Agregar categoria", on_click=lambda: agregar("categoria")),
                 ft.Button("Agregar color", on_click=lambda: agregar("color")),
                 ft.Button("Eliminar productos", on_click=eliminar),
-                ft.Button("Mostrar productos", on_click=mostrar),
+                ft.Button("Mostrar productos", on_click=mostrar(None)),
                 ft.Button("Modificar productos", on_click=modificar),
                 ft.Button("Agregar stock", on_click=agregar_stock),
                 #ft.Button("Consultar estadisticas", on_click=estadisticas),
@@ -686,7 +686,7 @@ def main(page: ft.Page):
         )
     )
 
-    mostrar()
+    mostrar(None)
 
     page.add(
         ft.Row(

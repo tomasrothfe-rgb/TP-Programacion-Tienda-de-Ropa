@@ -6,9 +6,11 @@ from collections import defaultdict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from clases import Inventario  
+from clases import Inventario,Cliente,Carrito  
+
 
 logging.basicConfig(level=logging.INFO)
+
 
 
 def main(page: ft.Page):
@@ -20,6 +22,67 @@ def main(page: ft.Page):
 
     inventario = Inventario()
     producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}
+    carrito= Carrito(1)
+    
+    def ventana_de_alerta(texto_superior, erratas):
+
+        def diseño_entradas(erratas):
+                    return ft.Text(
+                        erratas,
+                    )
+
+        return page.show_dialog(
+                    ft.AlertDialog(
+                            modal=True,
+                            title=ft.Text(texto_superior),
+                            content=ft.Column(
+                                diseño_entradas(erratas)
+                            ),
+                            actions=[
+                                    ft.Button("CONFIRMAR",on_click=lambda e: page.pop_dialog()),
+                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+                                ],
+                            actions_alignment=ft.MainAxisAlignment.END,))
+
+    def actualizar_carrito():
+        columna_carrito.controls.clear()
+        lista=carrito.listar_carrito()
+        lista_controls=[]
+        contador=0
+        for i in lista:
+            contador+=i[5]
+        carrito_texto.value=str(contador)
+        for i in lista:
+            info = inventario.consultar_producto_especifico(i[2])
+            lista_controls.append(
+                ft.ListTile(
+                    leading=ft.Image(src=info["url"]),
+                    title=f"{info['categoria']} {info['marca']} {info['nombre']}",
+                    subtitle=ft.Column(
+                        controls=[
+                            ft.Text(f"{i[3]} / Color: {i[4]}", color=ft.Colors.GREY_600, size=12),
+                            ft.Text(f"${info['precio']} x {i[5]}")
+                        ],
+                        spacing=2 
+                    ),
+                    trailing=ft.IconButton(
+                        icon=ft.Icons.DELETE_OUTLINE,
+                        icon_color=ft.Colors.RED_400,
+                        tooltip="Eliminar del carrito",
+                        on_click=lambda e, item=i: eliminar_carrito(e, item) 
+                    )
+                )
+            )
+
+        columna_carrito.controls.extend(lista_controls)
+        page.update()
+
+    async def mostrar_carrito(e):
+        await page.show_end_drawer()
+    
+    def eliminar_carrito(e, id):
+        carrito.eliminar_carrito(id[0])
+        actualizar_carrito()
 
     def mostrar(producto):
         lista_productos = inventario.listar_productos(producto)
@@ -81,9 +144,15 @@ def main(page: ft.Page):
         contenedor_botones = ft.Row(controls=[])
         contenedor_talles = ft.Row(controls=[])
 
-        def seleccionar_producto():
+        async def seleccionar_producto():
             producto_seleccionado["cantidad"] = int(txt_cantidad.value)
-            print(producto_seleccionado)
+            resultado = carrito.agregar_carrito(producto_seleccionado)
+            if resultado !=None:
+                ventana_de_alerta(*resultado)
+            else:
+                actualizar_carrito()
+                await page.show_end_drawer() 
+            
 
         def modificar_contador(e, delta: int):
             cantidad_disponible = producto_seleccionado["talle"][1]  
@@ -144,6 +213,8 @@ def main(page: ft.Page):
                     on_click=lambda e, c=clave, d=datos: seleccion_color(e, c, d)
                 ))
 
+
+
         txt_cantidad = ft.Text(value="1", size=30, weight=ft.FontWeight.BOLD)
         txt_error_cantidad = ft.Text(value="", color=ft.Colors.RED_400, size=12)
         btn_menos = ft.Button("-", on_click=lambda e: modificar_contador(e, -1), width=40)
@@ -172,7 +243,7 @@ def main(page: ft.Page):
             content="Agregar al carrito",
             icon=ft.Icons.SHOP,
             disabled=True,
-            on_click=lambda e: seleccionar_producto()
+            on_click=seleccionar_producto
         )
 
         stock_color_talle = ft.Text(visible=False)
@@ -200,21 +271,42 @@ def main(page: ft.Page):
 
         page.update()
 
-    def botones_filtro():
+    def menu_filtro():
         categorias = inventario.listar_elementos_producto()[0]
 
-        elementos=[]
+        opciones = [ft.DropdownOption(key="Todos", text="FILTRAR: TODOS")]
+        for c in categorias: 
+            opciones += [ft.DropdownOption(key=c, text=f"FILTRAR: {c.upper()}")]
 
-        for i in categorias:
-            elementos.append(ft.Button(
-                content=i,
-                on_click=lambda e, item=i: mostrar(item)
-            )
+        def al_seleccionar(e):
+            seleccion = e.control.value
+            mostrar(None if seleccion == "Todos" else seleccion)
+
+        return ft.Dropdown(
+            value="Todos",
+            options=opciones,
+            on_select=al_seleccionar,
         )
-        return elementos
 
-    filtro= ft.Column(
-        controls=botones_filtro()
+
+
+    columna_carrito=ft.ListView(
+        controls=[]
+    )
+    page.end_drawer = ft.NavigationDrawer(
+        controls=[
+            ft.Text("CARRITO DE COMPRAS"),
+            columna_carrito,
+            ft.Divider(thickness=1),
+            ft.Button(
+                content="Comprar",
+                on_click=lambda: print("hola")
+            )
+        ],
+    ) 
+    carrito_texto=ft.Text("0")
+    filtro = ft.Column(
+        controls=[menu_filtro()]
     )
 
     grid_productos = ft.GridView(
@@ -234,12 +326,14 @@ def main(page: ft.Page):
         content=ft.Column(
             controls=[
                 ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.Button("TODOS", on_click=lambda e: mostrar(None)),
-                filtro     
+                ft.IconButton(icon=ft.Icons.HOME, on_click=lambda: mostrar(None)),
+                filtro,
+                ft.Row(controls=[carrito_texto, ft.IconButton(icon=ft.Icons.SHOPPING_BAG, on_click=mostrar_carrito)])     
             ]
         )
     )
-
+    actualizar_carrito()
+    mostrar(None)
     page.add(
         ft.Row(
             controls=[

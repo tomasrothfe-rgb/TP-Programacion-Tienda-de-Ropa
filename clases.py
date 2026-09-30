@@ -25,6 +25,76 @@ class Admin():
         self.contraseña=contraseña
         self.email = email
 
+class Carrito:
+    def __init__(self, id_usuario):
+        self.id_usuario = id_usuario
+
+    def listar_carrito(self):
+        cursor.execute(
+            """
+            SELECT * FROM productos_carrito WHERE id_usuario = ?
+        """, (self.id_usuario,)
+        )
+        return cursor.fetchall()
+
+    def agregar_carrito(self, datos):
+            cursor.execute(
+                """
+                SELECT cantidad FROM productos_carrito 
+                WHERE id_usuario = ? AND id_producto = ? AND color = ? AND talle = ?
+            """,
+                (
+                    self.id_usuario,
+                    datos["id"],
+                    datos["color"],
+                    datos["talle"][0],
+                ),
+            )
+            producto_existente = cursor.fetchone() 
+
+            if producto_existente:
+                cantidad_actual_en_carrito = producto_existente[0]
+
+                if (cantidad_actual_en_carrito + datos["cantidad"]) > datos["talle"][1]:
+                    return ("ERROR DEL CARRITO", "LLEGÓ AL LIMITE DE STOCK")
+                else:
+                    cursor.execute(
+                        """
+                        UPDATE productos_carrito 
+                        SET cantidad = cantidad + ? 
+                        WHERE id_usuario = ? AND id_producto = ? AND color = ? AND talle = ?
+                    """,
+                        (
+                            datos["cantidad"],
+                            self.id_usuario,
+                            datos["id"],
+                            datos["color"],
+                            datos["talle"][0],
+                        ),
+                    )
+                    conexion.commit()
+                    return None
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO productos_carrito (id_usuario, id_producto, color, talle, cantidad)
+                    VALUES (?, ?, ?, ?, ?)
+                """,
+                    (
+                        self.id_usuario,
+                        datos["id"],
+                        datos["color"],
+                        datos["talle"][0],
+                        datos["cantidad"],
+                    ),
+                )
+                conexion.commit()
+                return None
+
+    def eliminar_carrito(self, id):
+        cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id,))
+        conexion.commit()
+
 class Producto:
     def __init__(self, id, categoria, marca, nombre, precio, imagen):
         self.id = id
