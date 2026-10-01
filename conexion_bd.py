@@ -136,6 +136,36 @@ def carrito():
 );"""
     )
 
+def compras():
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS compras (
+            id_compra INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_usuario INTEGER NOT NULL,
+            metodo_pago TEXT NOT NULL CHECK (metodo_pago IN ('tarjeta', 'transferencia')),
+            tipo_envio TEXT NOT NULL CHECK (tipo_envio IN ('retiro', 'envio')),
+            total REAL NOT NULL,
+            fecha TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS articulos_comprados (
+            id_articulo_comprado INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_compra INTEGER NOT NULL,
+            categoria TEXT NOT NULL,
+            marca TEXT NOT NULL,
+            nombre TEXT NOT NULL,
+            talle TEXT,
+            color TEXT,
+            cantidad INTEGER NOT NULL DEFAULT 1,
+            precio REAL NOT NULL,
+            FOREIGN KEY (id_compra) REFERENCES compras(id_compra)
+        )
+    """)
+
+    conexion.commit()
 
 
-carrito()
+
+compras()

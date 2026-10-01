@@ -95,6 +95,53 @@ class Carrito:
         cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id,))
         conexion.commit()
 
+    def eliminar_carrito(self, id):
+        cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id,))
+        conexion.commit()
+
+    def comprar_carrito(self, datos):
+        lista = self.listar_carrito()
+        if not lista:
+            return None
+
+        inventario = Inventario()
+
+        try:
+            cursor.execute(
+                "INSERT INTO compras (id_usuario, metodo_pago, tipo_envio, total, fecha) VALUES (?, ?, ?, ?, ?)",
+                (self.id_usuario, datos["metodo_pago"], datos["tipo_envio"], datos["total"], datos["fecha"]),
+            )
+            id_compra = cursor.lastrowid
+
+            filas = []
+            for i in lista:
+                info = inventario.consultar_producto_especifico(i[2])
+                filas.append((
+                    id_compra,
+                    info["categoria"],
+                    info["marca"],
+                    info["nombre"],
+                    i[4],           
+                    i[3],           
+                    int(i[5]),      
+                    float(info["precio"]),
+                ))
+
+            cursor.executemany(
+                """INSERT INTO articulos_comprados
+                   (id_compra, categoria, marca, nombre, talle, color, cantidad, precio)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                filas,
+            )
+
+            cursor.execute("DELETE FROM productos_carrito WHERE id_usuario = ?", (self.id_usuario,))
+
+            conexion.commit()
+            return id_compra
+        except Exception:
+            conexion.rollback()
+            raise
+
 class Producto:
     def __init__(self, id, categoria, marca, nombre, precio, imagen):
         self.id = id
