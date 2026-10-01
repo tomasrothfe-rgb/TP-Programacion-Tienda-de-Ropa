@@ -168,4 +168,25 @@ def compras():
 
 
 
-compras()
+def usuarios():
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            apellido TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            contrasena TEXT NOT NULL,
+            rol TEXT NOT NULL DEFAULT 'cliente' CHECK (rol IN ('cliente', 'admin')),
+            alerta_activa TEXT NOT NULL DEFAULT None
+            )""")
+def eliminar():
+    cursor.execute(
+        """
+    DROP TABLE usuarios;
+    """
+    )
+    conexion.commit()
+
+eliminar()
+usuarios()

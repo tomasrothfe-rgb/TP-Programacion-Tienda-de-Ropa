@@ -13,17 +13,17 @@ URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
 def limpiar_nombre(texto):
     return re.sub(r"[^\w-]", "_", texto)
 
-class Cliente():
-    def __init__(self, nombre, email, contraseña):
+class Usuario():
+    def __init__(self,id, nombre,apellido, email, contraseña,rol,alerta):
         self.nombre=nombre
         self.contraseña=contraseña
         self.email = email
+        self.id= id
+        self.apellido=apellido
+        self.rol=rol
+        self.alerta=alerta
 
-class Admin():
-    def __init__(self, nombre, email, contraseña):
-        self.nombre=nombre
-        self.contraseña=contraseña
-        self.email = email
+
 
 class Carrito:
     def __init__(self, id_usuario):

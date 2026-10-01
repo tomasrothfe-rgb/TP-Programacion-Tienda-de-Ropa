@@ -6,7 +6,7 @@ from collections import defaultdict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from clases import Inventario,Cliente,Carrito  
+from clases import Inventario,Usuario,Carrito  
 
 
 logging.basicConfig(level=logging.INFO)
