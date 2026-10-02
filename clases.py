@@ -23,8 +23,6 @@ class Usuario():
         self.rol=rol
         self.alerta=alerta
 
-
-
 class Carrito:
     def __init__(self, id_usuario):
         self.id_usuario = id_usuario
@@ -95,10 +93,6 @@ class Carrito:
         cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id,))
         conexion.commit()
 
-    def eliminar_carrito(self, id):
-        cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id,))
-        conexion.commit()
-
     def comprar_carrito(self, datos):
         lista = self.listar_carrito()
         if not lista:
@@ -116,6 +110,8 @@ class Carrito:
             filas = []
             for i in lista:
                 info = inventario.consultar_producto_especifico(i[2])
+                cantidad = int(i[5])
+
                 filas.append((
                     id_compra,
                     info["categoria"],
@@ -123,9 +119,26 @@ class Carrito:
                     info["nombre"],
                     i[4],           
                     i[3],           
-                    int(i[5]),      
+                    cantidad,
                     float(info["precio"]),
                 ))
+
+                cursor.execute(
+                    """
+                    UPDATE stock_variantes
+                    SET cantidad_stock = cantidad_stock - ?
+                    WHERE id_producto = ?
+                      AND id_talle_producto = (SELECT id_talle_producto FROM talles WHERE nombre_talle = ?)
+                      AND id_color_producto = (SELECT id_color_producto FROM colores WHERE nombre_color = ?)
+                      AND cantidad_stock >= ?
+                    """,
+                    (cantidad, i[2], i[4], i[3], cantidad),
+                )
+
+                if cursor.rowcount == 0:
+                    raise ValueError(
+                        f"Sin stock suficiente de {info['nombre']} ({i[3]}, talle {i[4]})"
+                    )
 
             cursor.executemany(
                 """INSERT INTO articulos_comprados
@@ -475,10 +488,13 @@ class Inventario:
             return ("ERROR AL INGRESAR STOCK","ASEGURESE DE INGRESAR BIEN LOS DATOS DE STOCK")
         
     @staticmethod
-    def listar_stock(id_producto):
+    def listar_stock(id_producto, solo_disponibles=True):
         logging.info(f"Se va a mostrar el stock del producto {id_producto}")
+
+        condicion = "AND s.cantidad_stock > 0" if solo_disponibles else ""
+
         cursor.execute(
-            """
+            f"""
             SELECT
                 (SELECT nombre_talle FROM talles
                     WHERE id_talle_producto = s.id_talle_producto),
@@ -486,18 +502,18 @@ class Inventario:
                     WHERE id_color_producto = s.id_color_producto),
                 s.cantidad_stock
             FROM stock_variantes s
-            WHERE s.id_producto = ?
+            WHERE s.id_producto = ? {condicion}
             """,
             (id_producto,),
         )
-        lista=cursor.fetchall()
-         
-        lista_diccionario=[]
+        lista = cursor.fetchall()
+
+        lista_diccionario = []
         for p in lista:
-            diccionario={"color":p[1],"talle":p[0],"cantidad":p[2]}
+            diccionario = {"color": p[1], "talle": p[0], "cantidad": p[2]}
             lista_diccionario.append(diccionario)
 
-        return {"diccionario":lista_diccionario}
+        return {"diccionario": lista_diccionario}
 
     @staticmethod
     def agregar_categoria(nombre):
