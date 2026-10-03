@@ -1,9 +1,16 @@
 import sqlite3 as sql
 import logging 
+import hashlib
+import os
 logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
 cursor = conexion.cursor()
+
+def hashear_contrasena(contrasena):
+    salt = os.urandom(16)
+    h = hashlib.pbkdf2_hmac("sha256", contrasena.encode(), salt, 100_000)
+    return salt.hex() + ":" + h.hex()
 
 # Conexion con la bd y creacion de tablas
 def creacion_bd():
@@ -188,5 +195,14 @@ def eliminar():
     )
     conexion.commit()
 
-eliminar()
-usuarios()
+def instertar_admin():
+    cursor.execute(
+        """
+        INSERT INTO usuarios (nombre, apellido, email, contrasena, rol)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        ("Admin", "Novus", "admin@novusprestige.com", hashear_contrasena("admin123"), "admin"),
+    )
+    conexion.commit()
+
+instertar_admin()

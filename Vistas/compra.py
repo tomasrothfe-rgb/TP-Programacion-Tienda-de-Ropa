@@ -11,18 +11,11 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO)
 
 COSTO_ENVIO = 15000
-id_usuario=1
 
 
-def main(page: ft.Page):
-    page.title = "Finalizar compra"
-    page.vertical_alignment = ft.MainAxisAlignment.START
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 1500
-    page.window.height = 600
-
+def CompraVista(page, ir_a_cliente, usuario):
     inventario = Inventario()
-    carrito = Carrito(id_usuario)
+    carrito = Carrito(usuario.id)
 
 
     def ventana_de_alerta(texto_superior, erratas):
@@ -69,11 +62,22 @@ def main(page: ft.Page):
         except Exception as ex:
             ventana_de_alerta("ERROR", f"No se pudo registrar la compra: {ex}")
             return
-
+        
         if resultado:
             boton_comprar.disabled = True
-            page.update()
-            ventana_de_alerta("COMPRA REALIZADA", f"Tu número de orden es {resultado}")
+
+            def terminar(e):
+                page.pop_dialog()
+                ir_a_cliente(usuario)
+
+            page.show_dialog(
+                ft.AlertDialog(
+                    modal=True,
+                    title=ft.Text("COMPRA REALIZADA"),
+                    content=ft.Text(f"Tu número de orden es {resultado}"),
+                    actions=[ft.Button("VOLVER A LA TIENDA", on_click=terminar)],
+                )
+            )
 
     lista = carrito.listar_carrito()
     lista_controls = []
@@ -274,9 +278,12 @@ def main(page: ft.Page):
     )
     contenedor_pago = ft.Container(content=contenido_pago)
 
-    page.add(
+    actualizar_totales()
+
+    return [
         ft.Row(
             controls=[
+                ft.Button("Volver a la tienda", icon=ft.Icons.ARROW_BACK, on_click=lambda e: ir_a_cliente(usuario)),
                 ft.Column(
                     controls=[contenedor_envio, contenedor_pago],
                     expand=True,
@@ -287,9 +294,5 @@ def main(page: ft.Page):
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,
         )
-    )
+    ]
 
-    actualizar_totales()  
-
-
-ft.app(target=main)

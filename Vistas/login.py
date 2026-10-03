@@ -6,11 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from clases import Usuario
 
-def main(page: ft.Page):
-    page.title = "Novus Prestige"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-
+def LoginVista(page, ir_a_cliente, ir_a_admin):
     login_correo = ft.TextField(label="Correo electrónico", width=300)
     login_contrasena = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, width=300)
 
@@ -39,7 +35,11 @@ def main(page: ft.Page):
         if resultado[0] != None:
             ventana_de_alerta(*resultado)
         else:
-            print(resultado[1].nombre)
+            usuario = resultado[1]
+            if usuario.rol=="admin": 
+                ir_a_admin(usuario)
+            else:
+                ir_a_cliente(usuario)
 
     btn_ingresar = ft.Button("Ingresar", on_click=lambda e: ingresar_tienda(login_correo.value, login_contrasena.value))
 
@@ -95,7 +95,7 @@ def main(page: ft.Page):
 
     tabs_header = ft.Row([btn_login_tab, btn_register_tab], alignment=ft.MainAxisAlignment.CENTER)
 
-    page.add(
+    return [
         ft.Column(
             [
                 tabs_header,
@@ -105,6 +105,5 @@ def main(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=20
         )
-    )
+    ]
 
-ft.app(target=main)

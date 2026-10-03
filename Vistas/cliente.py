@@ -13,20 +13,14 @@ logging.basicConfig(level=logging.INFO)
 
 
 
-def main(page: ft.Page):
-    page.title = "Panel de Cliente"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 1500
-    page.window.height = 500
-
+def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
     inventario = Inventario()
     producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}
-    carrito= Carrito(1)
+    carrito = Carrito(usuario.id) 
 
     def compra():
-        print()
-    
+        ir_a_compra(usuario)
+        
     def ventana_de_alerta(texto_superior, erratas):
 
         def diseño_entradas(erratas):
@@ -335,13 +329,15 @@ def main(page: ft.Page):
                 ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
                 ft.IconButton(icon=ft.Icons.HOME, on_click=lambda: mostrar(None)),
                 filtro,
-                ft.Row(controls=[carrito_texto, ft.IconButton(icon=ft.Icons.SHOPPING_BAG, on_click=mostrar_carrito)])     
+                ft.Row(controls=[carrito_texto, ft.IconButton(icon=ft.Icons.SHOPPING_BAG, on_click=mostrar_carrito)]),
+                ft.Button("Cerrar sesión", on_click=ir_a_login),     
             ]
         )
     )
     actualizar_carrito()
     mostrar(None)
-    page.add(
+
+    return [
         ft.Row(
             controls=[
                 contenedor_izquierdo,
@@ -351,6 +347,4 @@ def main(page: ft.Page):
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,
         )
-    )
-
-ft.app(target=main)
+    ]

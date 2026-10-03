@@ -10,12 +10,7 @@ from clases import Inventario,Usuario
 logging.basicConfig(level=logging.INFO)
 
 
-def main(page: ft.Page):
-    page.title = "Panel de Administrador "
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 700
-    page.window.height = 500
+def AdminVista(page, ir_a_login, usuario):
 
     inventario = Inventario()
     producto_en_seleccion = None
@@ -680,6 +675,7 @@ def main(page: ft.Page):
                 ft.Button("Mostrar productos", on_click=mostrar(None)),
                 ft.Button("Modificar productos", on_click=modificar),
                 ft.Button("Agregar stock", on_click=agregar_stock),
+                ft.Button("Cerrar sesión", on_click=ir_a_login),
                 #ft.Button("Consultar estadisticas", on_click=estadisticas),
                 #ft.Button("Ver historial de compras productos", on_click=historial),
             ]
@@ -688,14 +684,12 @@ def main(page: ft.Page):
 
     mostrar(None)
 
-    page.add(
+    return [
         ft.Row(
             controls=[contenedor_izquierdo, grid_productos],
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,
         )
-    )
+    ]
 
-
-ft.app(target=main)
