@@ -55,7 +55,10 @@ class Usuario():
                 else:
                     id, nombre, apellido, email_db, contrasena_db, rol, alerta = resultado
                     if verificar_contrasena(contrasena, contrasena_db):
-                        return None
+                        if rol == "admin":
+                            return None, Admin(id,nombre,apellido,email_db,contrasena_db,rol,alerta) 
+                        elif rol == "cliente":
+                            return None, Cliente(id,nombre,apellido,email_db,contrasena_db,rol,alerta) 
                     else:
                         return ("ERROR DE INICIO DE SESIÓN", "CONTRASEÑA INCORRECTA")
             except Exception as e:
@@ -94,6 +97,12 @@ class Usuario():
         self.apellido=apellido
         self.rol=rol
         self.alerta=alerta
+
+class Admin(Usuario):
+    pass
+
+class Cliente(Usuario):
+    pass
 
 class Carrito:
     def __init__(self, id_usuario):

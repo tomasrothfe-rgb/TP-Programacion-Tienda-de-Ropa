@@ -34,14 +34,14 @@ def main(page: ft.Page):
                                 ],
                             actions_alignment=ft.MainAxisAlignment.END,))
 
-    def ingresar_tienda():
-        resultado = Usuario.iniciar_sesion(login_correo.value, login_contrasena.value)
-        if resultado!= None:
+    def ingresar_tienda(correo, contraseña):
+        resultado = Usuario.iniciar_sesion(correo, contraseña)
+        if resultado[0] != None:
             ventana_de_alerta(*resultado)
         else:
-            print("Inicio de sesión exitoso")
+            print(resultado[1].nombre)
 
-    btn_ingresar = ft.Button("Ingresar", on_click=lambda e: ingresar_tienda())
+    btn_ingresar = ft.Button("Ingresar", on_click=lambda e: ingresar_tienda(login_correo.value, login_contrasena.value))
 
     reg_nombre = ft.TextField(label="Nombre", width=300)
     reg_apellido = ft.TextField(label="Apellido", width=300)
@@ -53,7 +53,7 @@ def main(page: ft.Page):
         if resultado!= None:
             ventana_de_alerta(*resultado)
         else:
-            print("Registro exitoso")
+            ingresar_tienda(reg_correo.value,reg_contrasena.value)
 
     btn_registrar = ft.Button("Registrarse", on_click=lambda e: registrar_usuario())
 
