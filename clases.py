@@ -39,11 +39,52 @@ class Usuario():
 
     @staticmethod
     def iniciar_sesion(email, contrasena):
-        print("ingresar", email, contrasena)
+        email=email.strip()
+        contrasena=contrasena.strip()
+        if not email or not contrasena:
+            return ("ERROR DE INICIO DE SESIÓN", "INGRESE SU CORREO Y CONTRASEÑA")
+        else:
+            try:
+                cursor.execute(
+                    "SELECT id_usuario, nombre, apellido, email, contrasena, rol, alerta_activa FROM usuarios WHERE email = ?",
+                    (email,),
+                )
+                resultado = cursor.fetchone()
+                if resultado is None:
+                    return ("ERROR DE INICIO DE SESIÓN", "USUARIO NO ENCONTRADO")
+                else:
+                    id, nombre, apellido, email_db, contrasena_db, rol, alerta = resultado
+                    if verificar_contrasena(contrasena, contrasena_db):
+                        return None
+                    else:
+                        return ("ERROR DE INICIO DE SESIÓN", "CONTRASEÑA INCORRECTA")
+            except Exception as e:
+                logging.error(f"Error al iniciar sesión: {e}")
+                return ("ERROR DE INICIO DE SESIÓN", "HUBO UN ERROR EN LA BASE DE DATOS")
 
     @staticmethod
     def registrar(nombre, apellido, email, contrasena):
-        print("registrar", nombre, apellido, email,contrasena)
+        nombre=nombre.strip()
+        apellido=apellido.strip()
+        email=email.strip()
+        contrasena=contrasena.strip()
+        
+        if not nombre or not apellido or not email or not contrasena:
+            return ("ERROR DE REGISTRO", "INGRESE TODOS LOS CAMPOS")
+        else:
+            try:
+                contrasena_hash = hashear_contrasena(contrasena)
+                cursor.execute(
+                    "INSERT INTO usuarios (nombre, apellido, email, contrasena, rol, alerta_activa) VALUES (?, ?, ?, ?, 'cliente', 0)",
+                    (nombre, apellido, email, contrasena_hash),
+                )
+                conexion.commit()
+                logging.info(f"Se registró el usuario {nombre} {apellido} en la base de datos")
+                return None
+            except Exception as e:
+                conexion.rollback()
+                logging.error(f"Error al registrar usuario: {e}")
+                return ("ERROR DE REGISTRO", "EL USUARIO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
         
     def __init__(self,id, nombre,apellido, email, contraseña,rol,alerta):
         self.nombre=nombre

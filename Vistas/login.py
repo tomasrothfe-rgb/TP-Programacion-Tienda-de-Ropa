@@ -35,9 +35,13 @@ def main(page: ft.Page):
                             actions_alignment=ft.MainAxisAlignment.END,))
 
     def ingresar_tienda():
-        Usuario.iniciar_sesion(login_correo.value, login_contrasena.value)
+        resultado = Usuario.iniciar_sesion(login_correo.value, login_contrasena.value)
+        if resultado!= None:
+            ventana_de_alerta(*resultado)
+        else:
+            print("Inicio de sesión exitoso")
 
-    btn_ingresar = ft.ElevatedButton("Ingresar", on_click=lambda e: ingresar_tienda())
+    btn_ingresar = ft.Button("Ingresar", on_click=lambda e: ingresar_tienda())
 
     reg_nombre = ft.TextField(label="Nombre", width=300)
     reg_apellido = ft.TextField(label="Apellido", width=300)
@@ -45,9 +49,13 @@ def main(page: ft.Page):
     reg_contrasena = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, width=300)
 
     def registrar_usuario():
-        Usuario.registrar(reg_nombre.value, reg_nombre.value, reg_correo.value, reg_contrasena.value)
+        resultado = Usuario.registrar(reg_nombre.value, reg_apellido.value, reg_correo.value, reg_contrasena.value)
+        if resultado!= None:
+            ventana_de_alerta(*resultado)
+        else:
+            print("Registro exitoso")
 
-    btn_registrar = ft.ElevatedButton("Registrarse", on_click=lambda e: registrar_usuario())
+    btn_registrar = ft.Button("Registrarse", on_click=lambda e: registrar_usuario())
 
     login_view = ft.Column(
         [
