@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import shutil
+import hashlib
 logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
@@ -13,7 +14,37 @@ URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
 def limpiar_nombre(texto):
     return re.sub(r"[^\w-]", "_", texto)
 
+import hashlib
+
+def hashear_contrasena(contrasena):
+    salt = os.urandom(16)
+    h = hashlib.pbkdf2_hmac("sha256", contrasena.encode(), salt, 100_000)
+    return salt.hex() + ":" + h.hex()
+
+def verificar_contrasena(contrasena, guardado):
+    salt_hex, h_hex = guardado.split(":")
+    h = hashlib.pbkdf2_hmac("sha256", contrasena.encode(), bytes.fromhex(salt_hex), 100_000)
+    return h.hex() == h_hex
+
+
 class Usuario():
+    def __init__(self, id, nombre, apellido, email, contraseña, rol, alerta):
+        self.nombre = nombre
+        self.contraseña = contraseña
+        self.email = email
+        self.id = id
+        self.apellido = apellido
+        self.rol = rol
+        self.alerta = alerta
+
+    @staticmethod
+    def iniciar_sesion(email, contrasena):
+        print("ingresar", email, contrasena)
+
+    @staticmethod
+    def registrar(nombre, apellido, email, contrasena):
+        print("registrar", nombre, apellido, email,contrasena)
+        
     def __init__(self,id, nombre,apellido, email, contraseña,rol,alerta):
         self.nombre=nombre
         self.contraseña=contraseña

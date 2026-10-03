@@ -1,4 +1,10 @@
 import flet as ft
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from clases import Usuario
 
 def main(page: ft.Page):
     page.title = "Novus Prestige"
@@ -8,19 +14,40 @@ def main(page: ft.Page):
     login_correo = ft.TextField(label="Correo electrónico", width=300)
     login_contrasena = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, width=300)
 
-    def ingresar_tienda(e):
-        pass
+    def ventana_de_alerta(texto_superior, erratas):
 
-    btn_ingresar = ft.ElevatedButton("Ingresar", on_click=ingresar_tienda)
+        def diseño_entradas(erratas):
+                    return ft.Text(
+                        erratas,
+                    )
 
-    reg_nombre = ft.TextField(label="Nombre completo", width=300)
+        return page.show_dialog(
+                    ft.AlertDialog(
+                            modal=True,
+                            title=ft.Text(texto_superior),
+                            content=ft.Column(
+                                diseño_entradas(erratas)
+                            ),
+                            actions=[
+                                    ft.Button("CONFIRMAR",on_click=lambda e: page.pop_dialog()),
+                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+                                ],
+                            actions_alignment=ft.MainAxisAlignment.END,))
+
+    def ingresar_tienda():
+        Usuario.iniciar_sesion(login_correo.value, login_contrasena.value)
+
+    btn_ingresar = ft.ElevatedButton("Ingresar", on_click=lambda e: ingresar_tienda())
+
+    reg_nombre = ft.TextField(label="Nombre", width=300)
+    reg_apellido = ft.TextField(label="Apellido", width=300)
     reg_correo = ft.TextField(label="Correo electrónico", width=300)
     reg_contrasena = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, width=300)
 
-    def registrar_usuario(e):
-        pass
+    def registrar_usuario():
+        Usuario.registrar(reg_nombre.value, reg_nombre.value, reg_correo.value, reg_contrasena.value)
 
-    btn_registrar = ft.ElevatedButton("Registrarse", on_click=registrar_usuario)
+    btn_registrar = ft.ElevatedButton("Registrarse", on_click=lambda e: registrar_usuario())
 
     login_view = ft.Column(
         [
@@ -35,7 +62,8 @@ def main(page: ft.Page):
 
     register_view = ft.Column(
         [
-            reg_nombre,
+            ft.Row(controls=[reg_nombre,
+            reg_apellido]),
             reg_correo,
             reg_contrasena,
             btn_registrar
