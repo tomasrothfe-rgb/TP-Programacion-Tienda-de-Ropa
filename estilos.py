@@ -119,12 +119,12 @@ def construir_header():
         content=ft.Row(
             controls=[
                 ft.Image(src="Imagenes/Imagenes_UI/jupiter_logo.png"),
-                ft.Text("JUPITER", font_family=TEXTO, weight=ft.FontWeight.BOLD, color=TEXTO, size=25)
+                ft.Text("JUPITER", font_family=TEXTO, weight=ft.FontWeight.BOLD, color=TEXTO, size=20)
             ],
         ),
         padding=20,
         expand=True,
-        height=70,
+        height=80,
         blur=ft.Blur(20, 20),
         border=ft.Border.only(bottom=ft.BorderSide(1.5, ft.Colors.with_opacity(0.4, ft.Colors.WHITE))),
         bgcolor=ft.Colors.with_opacity(0.7, FONDO)
