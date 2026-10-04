@@ -205,4 +205,30 @@ def instertar_admin():
     )
     conexion.commit()
 
-instertar_admin()
+def alertas():
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS alertas_usuarios(
+            id_alerta INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo_alerta TEXT NOT NULL UNIQUE,
+            descripcion_alerta TEXT NOT NULL
+        )
+        """
+    )
+
+    cursor.executemany(
+        """
+        INSERT OR IGNORE INTO alertas_usuarios (titulo_alerta, descripcion_alerta)
+        VALUES (?, ?)
+        """,
+        [
+            ("CARRITO", "ALGUNOS ELEMENTOS DE SU CARRITO FUERON COMPRADOS"),
+            ("ERROR DE CUENTA", "SU CUENTA SE DESACTIVO POR INACTIVIDAD"),
+        ],
+    )
+    conexion.commit()
+
+def borrar():
+    cursor.execute(
+        """DROP TABLE alertas_usuarios"""
+    )

@@ -1,4 +1,5 @@
 import flet as ft
+import estilos
 from Vistas.admin import AdminVista
 from Vistas.cliente import ClienteVista
 from Vistas.login import LoginVista
@@ -6,7 +7,9 @@ from Vistas.compra import CompraVista
 
 
 def main(page: ft.Page):
-    page.title = "Novus Prestige"
+    page.title = "Jupiter"
+    page.padding = 0
+    estilos.aplicar_tema(page)
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
