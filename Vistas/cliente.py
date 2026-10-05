@@ -40,44 +40,83 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
                                 ],
                             actions_alignment=ft.MainAxisAlignment.END,))
 
+    def tarjeta_item_carrito(item, info):
+        return ft.Container(
+            padding=14,
+            bgcolor="#F8FAFC",
+            border=ft.Border.all(1, estilos.SOMBRA_OSCURA),
+            border_radius=18,
+            content=ft.Row(
+                spacing=14,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Image(src=info["url"], width=64, height=64, fit=ft.BoxFit.COVER, border_radius=12),
+                    ft.Column(
+                        expand=True,
+                        spacing=3,
+                        controls=[
+                            ft.Text(f"{info['nombre']}".upper(), font_family=estilos.FUENTE_TITULO, size=13,
+                                    weight=ft.FontWeight.BOLD, color=estilos.TEXTO,
+                                    max_lines=2, overflow=ft.TextOverflow.ELLIPSIS),
+                            ft.Text(f"{item[3]} / TALLE {item[4]}".upper(), font_family=estilos.FUENTE_TEXTO,
+                                    size=11, color=estilos.TEXTO_SUAVE),
+                            ft.Text(f"{formato_precio(info['precio'])} x {item[5]}", font_family=estilos.FUENTE_TEXTO,
+                                    size=13, weight=ft.FontWeight.BOLD, color=estilos.TEXTO),
+                        ],
+                    ),
+                    ft.IconButton(
+                        icon=ft.Icons.DELETE_OUTLINE,
+                        icon_color=estilos.TEXTO_SUAVE,
+                        tooltip="Eliminar del carrito",
+                        on_click=lambda e, it=item: eliminar_carrito(e, it),
+                    ),
+                ],
+            ),
+        )
+
     def actualizar_carrito():
         columna_carrito.controls.clear()
-        lista=carrito.listar_carrito()
-        total_carrito.value=0
-        lista_controls=[]
-        contador=0
-        for i in lista:
-            contador+=i[5]
-        carrito_texto.value=str(contador)
+        lista = carrito.listar_carrito()
+        total = 0
+        unidades = 0
+
         for i in lista:
             info = inventario.consultar_producto_especifico(i[2])
-            lista_controls.append(
-                ft.ListTile(
-                    leading=ft.Image(src=info["url"]),
-                    title=f"{info['categoria']} {info['marca']} {info['nombre']}",
-                    subtitle=ft.Column(
-                        controls=[
-                            ft.Text(f"{i[3]} / Color: {i[4]}", color=ft.Colors.GREY_600, size=12),
-                            ft.Text(f"${info['precio']} x {i[5]}")
-                        ],
-                        spacing=2 
-                    ),
-                    trailing=ft.IconButton(
-                        icon=ft.Icons.DELETE_OUTLINE,
-                        icon_color=ft.Colors.RED_400,
-                        tooltip="Eliminar del carrito",
-                        on_click=lambda e, item=i: eliminar_carrito(e, item) 
-                    )
+            columna_carrito.controls.append(tarjeta_item_carrito(i, info))
+            total += info["precio"] * int(i[5])
+            unidades += int(i[5])
+
+        if not lista:
+            columna_carrito.controls.append(
+                ft.Container(
+                    padding=ft.Padding.only(top=60),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Text("Tu carrito está vacío", font_family=estilos.FUENTE_TEXTO,
+                                    size=16, color=estilos.TEXTO_SUAVE),
                 )
             )
-            total_carrito.value+=int(info["precio"]*int(i[5]))
 
-        columna_carrito.controls.extend(lista_controls)
+        carrito_texto.value = str(unidades)
+        total_carrito.value = formato_precio(total)
+        boton_finalizar_compra.disabled = not lista
         page.update()
 
-    async def mostrar_carrito(e):
-        await page.show_end_drawer()
-    
+    def abrir_carrito(e=None):
+        fondo_carrito.visible = True
+        panel_carrito.offset = ft.Offset(0, 0)
+        page.update()
+
+    def cerrar_carrito(e=None):
+        fondo_carrito.visible = False
+        panel_carrito.offset = ft.Offset(1, 0)
+        page.update()
+
+    def mostrar_carrito(e=None):
+        abrir_carrito()
+
+    def iniciar_compra(e=None):
+        compra()
+
     def eliminar_carrito(e, id):
         carrito.eliminar_carrito(id[0])
         actualizar_carrito()
@@ -173,7 +212,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
 
         return ft.Container(
             border_radius=25,
-            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,   
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             shadow=estilos.sombra_neu(),
             bgcolor=estilos.OSCURO,
             on_click=lambda e, prod=p: mostrar_producto(prod),
@@ -207,8 +246,8 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         stock = inventario.listar_stock(producto.id)
         producto_seleccionado.update({"id": producto.id, "color": None, "talle": None, "cantidad": None})
 
-        agrupado = defaultdict(list)          
-        hex_colores = {}                     
+        agrupado = defaultdict(list)
+        hex_colores = {}
         for items in stock["diccionario"]:
             agrupado[items["color"]].append((items["talle"], items["cantidad"]))
             hex_colores[items["color"]] = items["hex"]
@@ -304,9 +343,9 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             actualizar_carrito()
             return True
 
-        async def agregar_al_carrito(e=None):
+        def agregar_al_carrito(e=None):
             if agregar():
-                await page.show_end_drawer()
+                abrir_carrito()
 
         def comprar_ahora(e=None):
             if agregar():
@@ -448,7 +487,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
                         scroll=ft.ScrollMode.AUTO,
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
-                        controls=[ft.Container(padding=30, content=tarjeta)],   
+                        controls=[ft.Container(padding=30, content=tarjeta)],
                     ),
                 ),
                 ft.Container(expand=1),
@@ -459,7 +498,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
     def menu_filtro():
         categorias = inventario.listar_elementos_producto()[0]
 
-        estilo_opcion = ft.ButtonStyle(color=estilos.TEXTO)   
+        estilo_opcion = ft.ButtonStyle(color=estilos.TEXTO)
         opciones = [ft.DropdownOption(key="Todos", text="FILTRAR: TODOS", style=estilo_opcion)]
         for c in categorias: 
             opciones += [ft.DropdownOption(key=c, text=f"FILTRAR: {c.upper()}", style=estilo_opcion)]
@@ -474,13 +513,13 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             on_select=al_seleccionar,
             width=260,
             border_radius=15,
-            border_color=estilos.SOMBRA_OSCURA,     
+            border_color=estilos.SOMBRA_OSCURA,
             border_width=1,
             filled=True,
-            fill_color=estilos.FONDO,             
-            bgcolor=estilos.FONDO,                 
+            fill_color=estilos.FONDO,
+            bgcolor=estilos.FONDO,
             menu_style=ft.MenuStyle(bgcolor=estilos.FONDO),
-            color=estilos.TEXTO,                  
+            color=estilos.TEXTO,
             text_style=ft.TextStyle(color=estilos.TEXTO, font_family=estilos.FUENTE_TEXTO),
             text_size=14,
             trailing_icon=ft.Icon(ft.Icons.ARROW_DROP_DOWN, color=estilos.TEXTO),
@@ -488,22 +527,80 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         )
 
 
-    columna_carrito=ft.ListView(
-        controls=[]
+    columna_carrito = ft.ListView(expand=True, spacing=14, padding=ft.Padding.all(24))
+    total_carrito = ft.Text("$0", font_family=estilos.FUENTE_TITULO, size=26,
+                            weight=ft.FontWeight.BOLD, color=estilos.TEXTO)
+
+    boton_finalizar_compra = ft.Button(
+        content="INICIAR COMPRA SEGURA",
+        disabled=True,
+        on_click=iniciar_compra,
+        style=ft.ButtonStyle(
+            bgcolor={ft.ControlState.DEFAULT: estilos.OSCURO, ft.ControlState.DISABLED: estilos.COLOR_CAMPO},
+            color={ft.ControlState.DEFAULT: ft.Colors.WHITE, ft.ControlState.DISABLED: estilos.TEXTO_SUAVE},
+            padding=ft.Padding.symmetric(vertical=24),
+            shape=ft.RoundedRectangleBorder(radius=30),
+            text_style=ft.TextStyle(weight=ft.FontWeight.BOLD, letter_spacing=1.5, size=14),
+        ),
     )
-    total_carrito=ft.Text()
-    page.end_drawer = ft.NavigationDrawer(
-        controls=[
-            ft.Text("CARRITO DE COMPRAS"),
-            columna_carrito,
-            ft.Divider(thickness=1),
-            total_carrito,
-            ft.Button(
-                content="Comprar",
-                on_click=lambda: compra()
-            )
-        ],
-    ) 
+
+    encabezado_carrito = ft.Container(
+        padding=ft.Padding.symmetric(horizontal=24, vertical=18),
+        border=ft.Border.only(bottom=ft.BorderSide(1, estilos.SOMBRA_OSCURA)),
+        content=ft.Row(
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Text("TU CARRITO DE COMPRAS", font_family=estilos.FUENTE_TITULO, size=20,
+                        weight=ft.FontWeight.BOLD, color=estilos.TEXTO),
+                ft.IconButton(icon=ft.Icons.CLOSE, icon_color=estilos.TEXTO, on_click=cerrar_carrito),
+            ],
+        ),
+    )
+
+    pie_carrito = ft.Container(
+        padding=24,
+        bgcolor="#F8FAFC",
+        border=ft.Border.only(top=ft.BorderSide(1, estilos.SOMBRA_OSCURA)),
+        content=ft.Column(
+            tight=True,
+            spacing=18,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            controls=[
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        ft.Text("SUBTOTAL", font_family=estilos.FUENTE_TEXTO, size=12,
+                                color=estilos.TEXTO_SUAVE, style=ft.TextStyle(letter_spacing=1)),
+                        total_carrito,
+                    ],
+                ),
+                boton_finalizar_compra,
+            ],
+        ),
+    )
+
+    fondo_carrito = ft.Container(
+        left=0, right=0, top=0, bottom=0,
+        bgcolor=ft.Colors.with_opacity(0.35, ft.Colors.BLACK),
+        blur=ft.Blur(8, 8),
+        visible=False,
+        on_click=cerrar_carrito,
+    )
+
+    panel_carrito = ft.Container(
+        right=0, top=0, bottom=0,
+        width=450,
+        bgcolor=ft.Colors.WHITE,
+        offset=ft.Offset(1, 0),
+        animate_offset=ft.Animation(300, ft.AnimationCurve.EASE_OUT),
+        content=ft.Column(
+            spacing=0,
+            controls=[encabezado_carrito, columna_carrito, pie_carrito],
+        ),
+    )
+
     carrito_texto=ft.Text("0", color=estilos.TEXTO)
     dropdown_filtro = menu_filtro()
 
@@ -545,23 +642,34 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
 
     parte_superior.padding=50
 
-    inicio = ft.Row(
-        expand=True,
-        vertical_alignment=ft.CrossAxisAlignment.STRETCH,   
-        controls=[
-            ft.Container(expand=2),                         
-            ft.Container(
-                expand=5,                                    
-                content=ft.Column(
-                    expand=True,
-                    spacing=30,
-                    controls=[parte_superior, tarjetas_inferiores],
-                ),
-            ),
-            ft.Container(expand=2),                          
-        ],
+    ALTO_MINIMO_INICIO = 700
+    MARGEN_INICIO = 30
+    RESERVADO_INICIO = 100 + 20 + 2 * MARGEN_INICIO
+
+    def alto_inicio(alto_ventana):
+        return max(ALTO_MINIMO_INICIO, alto_ventana - RESERVADO_INICIO)
+
+    contenido_inicio = ft.Container(
+        height=alto_inicio(page.height or 0),
+        content=ft.Column(expand=True, spacing=30, controls=[parte_superior, tarjetas_inferiores]),
     )
 
+    inicio = ft.Row(
+        expand=True,
+        vertical_alignment=ft.CrossAxisAlignment.STRETCH,
+        controls=[
+            ft.Container(expand=2),
+            ft.Container(
+                expand=5,
+                content=ft.Column(
+                    expand=True,
+                    scroll=ft.ScrollMode.AUTO,
+                    controls=[ft.Container(padding=MARGEN_INICIO, content=contenido_inicio)],
+                ),
+            ),
+            ft.Container(expand=2),
+        ],
+    )
 
     grid_productos = ft.GridView(
         expand=True,
@@ -569,7 +677,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         child_aspect_ratio=0.8,
         spacing=30,
         run_spacing=30,
-        padding=30,          
+        padding=30,
     )
 
     titulo_catalogo = ft.Text("CATÁLOGO", font_family=estilos.FUENTE_TITULO, size=40,
@@ -614,6 +722,14 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         padding=ft.Padding.only(top=100, left=20, right=20, bottom=20)
     )
 
+    def ajustar_alto_inicio(e):
+        nuevo_alto = alto_inicio(e.height)
+        if contenido_inicio.height != nuevo_alto:
+            contenido_inicio.height = nuevo_alto
+            page.update()
+
+    contenedor_principal.on_size_change = ajustar_alto_inicio
+
     carrito_boton=[carrito_texto, ft.IconButton(icon=ft.Icons.SHOPPING_BAG, on_click=mostrar_carrito,style=ft.ButtonStyle(color=estilos.TEXTO))]
     botonera_centro=[
     ft.TextButton(content=ft.Text("Inicio", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=lambda: mostrar_inicio()),                
@@ -637,5 +753,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             expand=True,
         ),
         header,
+        fondo_carrito,
+        panel_carrito,
         ])
     ]
