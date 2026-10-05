@@ -59,14 +59,19 @@ def sombra_neu(distancia=8, blur=16):
     ]
 
 
-def reborde_neu(contenido):
+def reborde_neu(contenido, on_click=None, expand=False, width=None, height=None):
     return ft.Container(
         content=contenido,
         bgcolor=FONDO,
         shadow=sombra_neu(),
         border=ft.Border.all(1, ft.Colors.with_opacity(0.5, ft.Colors.WHITE)),
         border_radius=20,
-        padding=5
+        padding=20,
+        expand=expand,
+        width=width,
+        height=height,
+        ink=on_click is not None,
+        on_click=on_click,
     )
 
 
@@ -114,20 +119,39 @@ def tarjeta_glassmorph(titulo_superior, titulo, descripcion):
         left=40, right=40, bottom=60,                            
     )
 
-def construir_header():
+
+def construir_header(botones=None, botones_centro=None):
+    izquierda = ft.Row(
+        controls=[
+            ft.Image(src="Imagenes/Imagenes_UI/jupiter_logo.png"),
+            ft.Text("JUPITER", font_family=FUENTE_TEXTO, weight=ft.FontWeight.BOLD, color=TEXTO, size=20),
+        ],
+        expand=True,
+        alignment=ft.MainAxisAlignment.START,
+    )
+
+    centro = ft.Row(
+        controls=botones_centro,
+        alignment=ft.MainAxisAlignment.CENTER,
+    )
+
+    derecha = ft.Row(
+        controls=botones,
+        expand=True,
+        alignment=ft.MainAxisAlignment.END,
+    )
+
     return ft.Container(
         content=ft.Row(
-            controls=[
-                ft.Image(src="Imagenes/Imagenes_UI/jupiter_logo.png"),
-                ft.Text("JUPITER", font_family=TEXTO, weight=ft.FontWeight.BOLD, color=TEXTO, size=20)
-            ],
+            controls=[izquierda, centro, derecha],
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
         ),
         padding=20,
         expand=True,
         height=80,
         blur=ft.Blur(20, 20),
         border=ft.Border.only(bottom=ft.BorderSide(1.5, ft.Colors.with_opacity(0.4, ft.Colors.WHITE))),
-        bgcolor=ft.Colors.with_opacity(0.7, FONDO)
+        bgcolor=ft.Colors.with_opacity(0.7, FONDO),
     )
 
 def construir_footer():

@@ -2,6 +2,7 @@ import flet as ft
 import logging 
 import os
 import sys
+import estilos
 from collections import defaultdict
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -10,8 +11,6 @@ from clases import Inventario,Usuario,Carrito
 
 
 logging.basicConfig(level=logging.INFO)
-
-
 
 def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
     inventario = Inventario()
@@ -83,9 +82,50 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         carrito.eliminar_carrito(id[0])
         actualizar_carrito()
 
-    def mostrar(producto):
+    def generar_tarjetas_incio(lista):
+        tarjetas = ft.Row(
+            controls=[],
+            expand=True,                                      
+            spacing=25,
+            vertical_alignment=ft.CrossAxisAlignment.STRETCH,
+        )
+        for imagen, filtro in lista:
+            tarjeta = estilos.reborde_neu(
+                ft.Image(src=imagen, fit=ft.BoxFit.CONTAIN),
+                on_click=lambda e, f=filtro: mostrar_catalogo(f),
+                expand=True,
+            )
+            tarjeta.padding = 20    
+            tarjetas.controls.append(tarjeta)
+        return tarjetas
+
+    def generar_tarjetas_superior(lista):
+        tarjetas = ft.Row(
+            controls=[],
+            expand=True,                                     
+            spacing=25,
+            vertical_alignment=ft.CrossAxisAlignment.STRETCH,  
+        )
+        for i in lista:
+            tarjetas.controls.append(
+                ft.Container(
+                    expand=True,                               
+                    content=ft.Image(src=i, fit=ft.BoxFit.CONTAIN),
+                    bgcolor=ft.Colors.WHITE,
+                    padding=20,
+                    border_radius=20,
+                    border=ft.Border.all(1, ft.Colors.with_opacity(0.5, ft.Colors.GREY)),
+                )
+            )
+        return tarjetas
+    
+    def mostrar_inicio():
+        contenedor_principal.content=inicio
+        page.update()
+
+    def mostrar_catalogo(producto):
         lista_productos = inventario.listar_productos(producto)
-        contenedor_derecho.content=None
+        contenedor_principal.content=None
         grid_productos.controls.clear()
         
         for p in lista_productos:
@@ -132,14 +172,14 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             )
             grid_productos.controls.append(tarjeta_producto)
 
-        contenedor_derecho.content=grid_productos
+        contenedor_principal.content=grid_productos
         page.update()
     
     def mostrar_producto(producto):
         logging.info(f"Click en el producto: {producto.nombre} (ID: {producto.id})")
         stock = inventario.listar_stock(producto.id)
         producto_seleccionado["id"] = producto.id
-        contenedor_derecho.content = None
+        contenedor_principal.content = None
         contenedor_botones = ft.Row(controls=[])
         contenedor_talles = ft.Row(controls=[])
 
@@ -264,7 +304,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
                 panel_compra,
             ]
         )
-        contenedor_derecho.content = ft.Container(
+        contenedor_principal.content = ft.Container(
             content=pagina_producto
         )
 
@@ -279,14 +319,13 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
 
         def al_seleccionar(e):
             seleccion = e.control.value
-            mostrar(None if seleccion == "Todos" else seleccion)
+            mostrar_catalogo(None if seleccion == "Todos" else seleccion)
 
         return ft.Dropdown(
             value="Todos",
             options=opciones,
             on_select=al_seleccionar,
         )
-
 
 
     columna_carrito=ft.ListView(
@@ -305,10 +344,66 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             )
         ],
     ) 
-    carrito_texto=ft.Text("0")
+    carrito_texto=ft.Text("0", color=estilos.TEXTO)
     filtro = ft.Column(
         controls=[menu_filtro()]
     )
+
+    tarjetas_inferiores = ft.Container(
+        expand=1,    
+        content=generar_tarjetas_incio((
+            ("Imagenes/Imagenes_UI/ui_remeras.png", "Remera"),
+            ("Imagenes/Imagenes_UI/ui_pantalones.png", "Pantalon"),
+            ("Imagenes/Imagenes_UI/ui_camperas.png", "Campera"),
+        )),
+    )
+
+    parte_superior_izquierda = ft.Container(content=ft.Image(src="Imagenes/Imagenes_UI/letras_inicio.png", fit=ft.BoxFit.COVER), expand=True)
+    parte_superior_derecha = ft.Container(content=ft.Image(src="Imagenes/Imagenes_UI/imagen_inicio.jpg", fit=ft.BoxFit.COVER, border_radius=20), expand=True)
+    parte_superior_inferior = ft.Container(content=generar_tarjetas_superior(
+        (
+            ("Imagenes/Imagenes_UI/primeras_marcas.png"),
+            ("Imagenes/Imagenes_UI/atencion.png"),
+            ("Imagenes/Imagenes_UI/algodon.png"),
+            ("Imagenes/Imagenes_UI/sucursales.png"),
+        )
+    ), expand=True)
+
+    parte_superior = estilos.reborde_neu(
+        ft.Column(
+            expand=True,
+            controls=[
+                ft.Row(
+                    expand=4,                    
+                    spacing=40,
+                    controls=[parte_superior_izquierda, parte_superior_derecha],
+                ),
+                ft.Divider(color=ft.Colors.with_opacity(0.5, ft.Colors.GREY)),
+                parte_superior_inferior,          
+            ],
+        ),
+        expand=3,                                 
+    )
+
+    parte_superior.padding=50
+
+    inicio = ft.Row(
+        expand=True,
+        vertical_alignment=ft.CrossAxisAlignment.STRETCH,   
+        controls=[
+            ft.Container(expand=2),                         
+            ft.Container(
+                expand=5,                                    
+                content=ft.Column(
+                    expand=True,
+                    spacing=30,
+                    controls=[parte_superior, tarjetas_inferiores],
+                ),
+            ),
+            ft.Container(expand=2),                          
+        ],
+    )
+
 
     grid_productos = ft.GridView(
         expand=1,
@@ -317,34 +412,34 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         spacing=20,
         run_spacing=20,
     )
-    contenedor_derecho=ft.Container(
-         content=None,
-         bgcolor= ft.Colors.GREY,
-         expand=True
+    contenedor_principal = ft.Container(
+        content=None,
+        expand=True,
+        padding=ft.Padding.only(top=100, left=20, right=20, bottom=20)
     )
-    
-    contenedor_izquierdo = ft.Container(
-        content=ft.Column(
-            controls=[
-                ft.Text("Panel de Cliente", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.IconButton(icon=ft.Icons.HOME, on_click=lambda: mostrar(None)),
-                filtro,
-                ft.Row(controls=[carrito_texto, ft.IconButton(icon=ft.Icons.SHOPPING_BAG, on_click=mostrar_carrito)]),
-                ft.Button("Cerrar sesión", on_click=ir_a_login),     
-            ]
-        )
-    )
-    actualizar_carrito()
-    mostrar(None)
 
-    return [
+    carrito_boton=[carrito_texto, ft.IconButton(icon=ft.Icons.SHOPPING_BAG, on_click=mostrar_carrito,style=ft.ButtonStyle(color=estilos.TEXTO))]
+    botonera_centro=[
+    ft.TextButton(content=ft.Text("Inicio", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=lambda: mostrar_inicio()),                
+    ft.TextButton(content=ft.Text("Catálogo", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=lambda: mostrar_catalogo(None)),
+    ft.TextButton(content=ft.Text("Cerrar Sesión", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=ir_a_login)]
+    
+    header=estilos.construir_header(carrito_boton, botonera_centro)
+
+    actualizar_carrito()
+    mostrar_inicio()
+
+    return [ft.Stack(
+        expand=True,
+        controls=[
         ft.Row(
             controls=[
-                contenedor_izquierdo,
-                contenedor_derecho,
+                contenedor_principal,
             ],
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
             vertical_alignment=ft.CrossAxisAlignment.START,
             expand=True,
-        )
+        ),
+        header,
+        ])
     ]

@@ -4,6 +4,7 @@ from Vistas.admin import AdminVista
 from Vistas.cliente import ClienteVista
 from Vistas.login import LoginVista
 from Vistas.compra import CompraVista
+from types import SimpleNamespace
 
 
 def main(page: ft.Page):
@@ -46,7 +47,11 @@ def main(page: ft.Page):
         page.add(*AdminVista(page, mostrar_login, usuario))
         page.update()
 
-    mostrar_login()
+   
+
+
+    usuario_prueba = SimpleNamespace(id=1, nombre="1", apellido="1", email="1", rol="cliente")
+    mostrar_cliente(usuario_prueba)
 
 
 ft.run(main)
