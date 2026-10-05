@@ -50,8 +50,8 @@ def main(page: ft.Page):
    
 
 
-    usuario_prueba = SimpleNamespace(id=1, nombre="1", apellido="1", email="1", rol="cliente")
-    mostrar_cliente(usuario_prueba)
+    usuario_prueba = SimpleNamespace(id=1, nombre="1", apellido="1", email="1", rol="admin")
+    mostrar_admin(usuario_prueba)
 
 
 ft.run(main)

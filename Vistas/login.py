@@ -6,6 +6,7 @@ import estilos
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from clases import Usuario
+from email_validator import validate_email, EmailNotValidError
 
 def LoginVista(page, ir_a_cliente, ir_a_admin):
     correo_ref = ft.Ref[ft.TextField]()
@@ -62,16 +63,31 @@ def LoginVista(page, ir_a_cliente, ir_a_admin):
     reg_contrasena = estilos.campo_datos("Contraseña", "********", ref=reg_contrasena_ref, password=True, can_reveal_password=True)
 
     def registrar_usuario():
-        resultado = Usuario.registrar(
-            nombre_ref.current.value,
-            apellido_ref.current.value,
-            reg_correo_ref.current.value,
-            reg_contrasena_ref.current.value,
-        )
+        nombre = (nombre_ref.current.value or "").strip()
+        apellido = (apellido_ref.current.value or "").strip()
+        correo = (reg_correo_ref.current.value or "").strip()
+        contrasena = (reg_contrasena_ref.current.value or "").strip()
+
+        if not nombre or not apellido or not correo or not contrasena:
+            ventana_de_alerta("ERROR DE REGISTRO", "INGRESE TODOS LOS CAMPOS")
+            return
+        if not nombre.replace(" ", "").isalpha() or not apellido.replace(" ", "").isalpha():
+            ventana_de_alerta("ERROR DE REGISTRO", "EL NOMBRE Y EL APELLIDO SOLO PUEDEN CONTENER LETRAS")
+            return
+        try:
+            correo = validate_email(correo, check_deliverability=False).normalized
+        except EmailNotValidError:
+            ventana_de_alerta("ERROR DE REGISTRO", "INGRESE UN CORREO ELECTRÓNICO VÁLIDO")
+            return
+        if len(contrasena) < 8:
+            ventana_de_alerta("ERROR DE REGISTRO", "LA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES")
+            return
+
+        resultado = Usuario.registrar(nombre, apellido, correo, contrasena)
         if resultado != None:
             ventana_de_alerta(*resultado)
         else:
-            ingresar_tienda(reg_correo_ref.current.value, reg_contrasena_ref.current.value)
+            ingresar_tienda(correo, contrasena)
 
     btn_registrar = ft.Button("Registrarse", style=estilos.boton_presionado(),on_click=lambda e: registrar_usuario())
 
