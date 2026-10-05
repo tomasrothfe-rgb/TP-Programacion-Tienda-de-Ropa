@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
 cursor = conexion.cursor()
+
 CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"
 URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
 def limpiar_nombre(texto):
@@ -581,7 +582,9 @@ class Inventario:
                     WHERE id_talle_producto = s.id_talle_producto),
                 (SELECT nombre_color FROM colores
                     WHERE id_color_producto = s.id_color_producto),
-                s.cantidad_stock
+                s.cantidad_stock,
+                (SELECT codigo_hex FROM colores
+                    WHERE id_color_producto = s.id_color_producto)
             FROM stock_variantes s
             WHERE s.id_producto = ? {condicion}
             """,
@@ -591,7 +594,7 @@ class Inventario:
 
         lista_diccionario = []
         for p in lista:
-            diccionario = {"color": p[1], "talle": p[0], "cantidad": p[2]}
+            diccionario = {"color": p[1], "talle": p[0], "cantidad": p[2], "hex": p[3]}
             lista_diccionario.append(diccionario)
 
         return {"diccionario": lista_diccionario}
@@ -621,11 +624,19 @@ class Inventario:
             return ("ERROR AL AGREGAR MARCA", "ASEGURESE DE QUE LA MARCA NO EXISTA EN LA BASE DE DATOS")
 
     @staticmethod
-    def agregar_color(nombre):
+    def agregar_color(nombre, codigo_hex):
+        if not nombre or not nombre.strip():
+            return ("ERROR AL AGREGAR COLOR", "EL COLOR DEBE TENER UN NOMBRE")
+        codigo = codigo_hex
+        if codigo is None:
+            return ("ERROR AL AGREGAR COLOR", "SELECCIONE UN COLOR VALIDO")
         try:
-            cursor.execute("INSERT INTO colores (nombre_color) VALUES (?)", (nombre.strip(),))
+            cursor.execute(
+                "INSERT INTO colores (nombre_color, codigo_hex) VALUES (?, ?)",
+                (nombre.strip(), codigo),
+            )
             conexion.commit()
-            logging.info(f"Se insertó el color {nombre}")
+            logging.info(f"Se insertó el color {nombre} ({codigo})")
             return None
         except Exception as e:
             conexion.rollback()

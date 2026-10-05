@@ -1,4 +1,5 @@
 import flet as ft
+import flet_color_pickers as fcp
 import logging 
 import os
 import sys
@@ -569,6 +570,61 @@ def AdminVista(page, ir_a_login, usuario):
                         ],
                     actions_alignment=ft.MainAxisAlignment.END,))
 
+    def ventana_agregar_color(texto_superior):
+        color_elegido = {"hex": "#000000"}
+        nombre = ft.TextField(hint_text="color")
+        vista_previa = ft.Container(
+            width=40, height=40, border_radius=20,
+            bgcolor=color_elegido["hex"],
+            border=ft.Border.all(1, ft.Colors.GREY_400),
+        )
+        texto_hex = ft.Text(color_elegido["hex"])
+
+        def al_cambiar_color(e):
+            codigo = e.data
+            if codigo is None:
+                return
+            color_elegido["hex"] = codigo
+            vista_previa.bgcolor = codigo
+            texto_hex.value = codigo
+            page.update()
+
+        selector = fcp.ColorPicker(
+            color=color_elegido["hex"],
+            enable_alpha=False,        # el color de un producto no necesita transparencia
+            hex_input_bar=True,        # permite escribir el hex a mano
+            color_picker_width=300,
+            on_color_change=al_cambiar_color,
+        )
+
+        def confirmar_click():
+            retorno = inventario.agregar_color(nombre.value, color_elegido["hex"])
+            if retorno is not None:
+                ventana_de_alerta(*retorno)
+            else:
+                page.pop_dialog()
+
+        return page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text(texto_superior),
+                content=ft.Column(
+                    tight=True,
+                    scroll=ft.ScrollMode.AUTO,
+                    controls=[
+                        nombre,
+                        selector,
+                        ft.Row(controls=[vista_previa, texto_hex], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                    ],
+                ),
+                actions=[
+                    ft.Button("CONFIRMAR", on_click=lambda e: confirmar_click()),
+                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog()),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
+
     def cambiar_seleccion(e, id, tarjeta_container):
         nonlocal producto_en_seleccion, tarjeta_seleccionada_ref
 
@@ -651,7 +707,7 @@ def AdminVista(page, ir_a_login, usuario):
         elif tipo=="categoria":
             ventana_con_entradas(texto_superior,tipo, inventario.agregar_categoria)
         elif tipo=="color":
-            ventana_con_entradas(texto_superior,tipo, inventario.agregar_color)
+            ventana_agregar_color(texto_superior)
         else:
             ventana_agregar_producto(texto_superior)
 
@@ -692,4 +748,3 @@ def AdminVista(page, ir_a_login, usuario):
             expand=True,
         )
     ]
-
