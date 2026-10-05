@@ -30,7 +30,8 @@ def creacion_bd():
         -- Creación de la tabla de colores (con nombre único)
         CREATE TABLE IF NOT EXISTS colores (
             id_color_producto INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre_color TEXT NOT NULL UNIQUE
+            nombre_color TEXT NOT NULL UNIQUE,
+            codigo_hex TEXT
         );
 
         -- Creación de la tabla de talles (con nombre único)
@@ -78,13 +79,13 @@ def creacion_bd():
         ('Levi''s');
 
         -- Inserción de registros de ejemplo en colores
-        INSERT INTO colores (nombre_color) VALUES 
-        ('Rojo'),
-        ('Azul'),
-        ('Negro'),
-        ('Verde'),
-        ('Gris'),
-        ('Blanco');
+        INSERT INTO colores (nombre_color, codigo_hex) VALUES 
+        ('Rojo', '#DC2626'),
+        ('Azul', '#2563EB'),
+        ('Negro', '#0D1117'),
+        ('Verde', '#16A34A'),
+        ('Gris', '#9CA3AF'),
+        ('Blanco', '#F8FAFC');
 
         -- Inserción de registros de ejemplo en talles
         INSERT INTO talles (nombre_talle) VALUES 
@@ -205,4 +206,30 @@ def instertar_admin():
     )
     conexion.commit()
 
-instertar_admin()
+def alertas():
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS alertas_usuarios(
+            id_alerta INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo_alerta TEXT NOT NULL UNIQUE,
+            descripcion_alerta TEXT NOT NULL
+        )
+        """
+    )
+
+    cursor.executemany(
+        """
+        INSERT OR IGNORE INTO alertas_usuarios (titulo_alerta, descripcion_alerta)
+        VALUES (?, ?)
+        """,
+        [
+            ("CARRITO", "ALGUNOS ELEMENTOS DE SU CARRITO FUERON COMPRADOS"),
+            ("ERROR DE CUENTA", "SU CUENTA SE DESACTIVO POR INACTIVIDAD"),
+        ],
+    )
+    conexion.commit()
+
+def borrar():
+    cursor.execute(
+        """DROP TABLE alertas_usuarios"""
+    )

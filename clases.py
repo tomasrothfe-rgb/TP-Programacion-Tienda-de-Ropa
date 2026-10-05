@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
 cursor = conexion.cursor()
+
 CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"
 URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
 def limpiar_nombre(texto):
@@ -71,23 +72,54 @@ class Usuario():
         apellido=apellido.strip()
         email=email.strip()
         contrasena=contrasena.strip()
-        
+
         if not nombre or not apellido or not email or not contrasena:
             return ("ERROR DE REGISTRO", "INGRESE TODOS LOS CAMPOS")
-        else:
-            try:
-                contrasena_hash = hashear_contrasena(contrasena)
-                cursor.execute(
-                    "INSERT INTO usuarios (nombre, apellido, email, contrasena, rol, alerta_activa) VALUES (?, ?, ?, ?, 'cliente', 0)",
-                    (nombre, apellido, email, contrasena_hash),
-                )
-                conexion.commit()
-                logging.info(f"Se registró el usuario {nombre} {apellido} en la base de datos")
-                return None
-            except Exception as e:
-                conexion.rollback()
-                logging.error(f"Error al registrar usuario: {e}")
-                return ("ERROR DE REGISTRO", "EL USUARIO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
+        try:
+            contrasena_hash = hashear_contrasena(contrasena)
+            cursor.execute(
+                "INSERT INTO usuarios (nombre, apellido, email, contrasena, rol, alerta_activa) VALUES (?, ?, ?, ?, 'cliente', 0)",
+                (nombre, apellido, email, contrasena_hash),
+            )
+            conexion.commit()
+            logging.info(f"Se registró el usuario {nombre} {apellido} en la base de datos")
+            return None
+        except Exception as e:
+            conexion.rollback()
+            logging.error(f"Error al registrar usuario: {e}")
+            return ("ERROR DE REGISTRO", "EL USUARIO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
+
+    @staticmethod
+    def registrar_admin(nombre, apellido, email, contrasena):
+        nombre=nombre.strip()
+        apellido=apellido.strip()
+        email=email.strip()
+        contrasena=contrasena.strip()
+
+        if not nombre or not apellido or not email or not contrasena:
+            return ("ERROR AL AGREGAR ADMINISTRADOR", "INGRESE TODOS LOS CAMPOS")
+        try:
+            contrasena_hash = hashear_contrasena(contrasena)
+            cursor.execute(
+                "INSERT INTO usuarios (nombre, apellido, email, contrasena, rol, alerta_activa) VALUES (?, ?, ?, ?, 'admin', 0)",
+                (nombre, apellido, email, contrasena_hash),
+            )
+            conexion.commit()
+            logging.info(f"Se registró el administrador {nombre} {apellido} en la base de datos")
+            return None
+        except Exception as e:
+            conexion.rollback()
+            logging.error(f"Error al registrar administrador: {e}")
+            return ("ERROR AL AGREGAR ADMINISTRADOR", "EL CORREO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
+
+    @staticmethod
+    def listar_usuarios():
+        cursor.execute("SELECT id_usuario, nombre, apellido, email, rol FROM usuarios ORDER BY id_usuario")
+        return [
+            {"id": f[0], "nombre": f[1], "apellido": f[2], "email": f[3], "rol": f[4]}
+            for f in cursor.fetchall()
+        ]
+
         
     def __init__(self,id, nombre,apellido, email, contraseña,rol,alerta):
         self.nombre=nombre
@@ -581,7 +613,9 @@ class Inventario:
                     WHERE id_talle_producto = s.id_talle_producto),
                 (SELECT nombre_color FROM colores
                     WHERE id_color_producto = s.id_color_producto),
-                s.cantidad_stock
+                s.cantidad_stock,
+                (SELECT codigo_hex FROM colores
+                    WHERE id_color_producto = s.id_color_producto)
             FROM stock_variantes s
             WHERE s.id_producto = ? {condicion}
             """,
@@ -591,7 +625,7 @@ class Inventario:
 
         lista_diccionario = []
         for p in lista:
-            diccionario = {"color": p[1], "talle": p[0], "cantidad": p[2]}
+            diccionario = {"color": p[1], "talle": p[0], "cantidad": p[2], "hex": p[3]}
             lista_diccionario.append(diccionario)
 
         return {"diccionario": lista_diccionario}
@@ -621,11 +655,19 @@ class Inventario:
             return ("ERROR AL AGREGAR MARCA", "ASEGURESE DE QUE LA MARCA NO EXISTA EN LA BASE DE DATOS")
 
     @staticmethod
-    def agregar_color(nombre):
+    def agregar_color(nombre, codigo_hex):
+        if not nombre or not nombre.strip():
+            return ("ERROR AL AGREGAR COLOR", "EL COLOR DEBE TENER UN NOMBRE")
+        codigo = codigo_hex
+        if codigo is None:
+            return ("ERROR AL AGREGAR COLOR", "SELECCIONE UN COLOR VALIDO")
         try:
-            cursor.execute("INSERT INTO colores (nombre_color) VALUES (?)", (nombre.strip(),))
+            cursor.execute(
+                "INSERT INTO colores (nombre_color, codigo_hex) VALUES (?, ?)",
+                (nombre.strip(), codigo),
+            )
             conexion.commit()
-            logging.info(f"Se insertó el color {nombre}")
+            logging.info(f"Se insertó el color {nombre} ({codigo})")
             return None
         except Exception as e:
             conexion.rollback()
@@ -655,3 +697,12 @@ class Inventario:
         marcas = [fila[0] for fila in cursor.fetchall()]
 
         return [categorias, marcas]
+    @staticmethod
+    def listar_colores():
+        cursor.execute("SELECT nombre_color FROM colores ORDER BY id_color_producto")
+        return [fila[0] for fila in cursor.fetchall()]
+
+    @staticmethod
+    def listar_talles():
+        cursor.execute("SELECT nombre_talle FROM talles ORDER BY id_talle_producto")
+        return [fila[0] for fila in cursor.fetchall()]

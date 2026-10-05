@@ -1,13 +1,17 @@
 import flet as ft
-import logging 
+import flet_color_pickers as fcp
+import logging
 import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from clases import Inventario,Usuario
+import estilos
+from clases import Inventario, Usuario
 
 logging.basicConfig(level=logging.INFO)
+
+BORDE_CLARO = ft.Colors.with_opacity(0.6, ft.Colors.WHITE)
 
 
 def AdminVista(page, ir_a_login, usuario):
@@ -16,365 +20,129 @@ def AdminVista(page, ir_a_login, usuario):
     producto_en_seleccion = None
     tarjeta_seleccionada_ref = None
 
-    def modificar():
-        if producto_en_seleccion is None:
-            ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA MODIFICAR")
-            return
+    def texto(valor, size=14, color=estilos.TEXTO, bold=False, titulo=False, **kwargs):
+        return ft.Text(
+            valor,
+            size=size,
+            color=color,
+            weight=ft.FontWeight.BOLD if bold else ft.FontWeight.NORMAL,
+            font_family=estilos.FUENTE_TITULO if titulo else estilos.FUENTE_TEXTO,
+            **kwargs,
+        )
+
+    def etiqueta(valor):
+        return texto(valor.upper(), size=11, color=estilos.TEXTO_SUAVE, bold=True)
+
+    def boton(contenido, icono, accion, tipo="secundario"):
+        if tipo == "primario":
+            fondo, color_texto, borde = estilos.TEXTO, estilos.FONDO, ft.BorderSide(1, estilos.TEXTO)
+        elif tipo == "peligro":
+            fondo, color_texto, borde = "#FEE2E2", "#DC2626", ft.BorderSide(1, "#FECACA")
         else:
-            datos = inventario.consultar_producto_especifico(producto_en_seleccion)
+            fondo, color_texto, borde = estilos.BLANCO, estilos.TEXTO, ft.BorderSide(1, estilos.SOMBRA_OSCURA)
 
-        def agregar_clik(texto):
-            page.pop_dialog()
-            agregar(texto)
-
-        async def seleccionar_archivo(e):
-            files = await ft.FilePicker().pick_files(
-                allow_multiple=False,
-                allowed_extensions=["png"] 
-            )
-            if files:
-                archivo = files[0]
-                nombre_archivo = archivo.name
-                        
-                if nombre_archivo.lower().endswith('.png'):
-                    imagen_preview.src=archivo.path
-                    imagen_preview.visible=True
-                    elementos_seleccionados["imagen"] = archivo.path
-                    resultado_texto.value = "Archivo seleccionado con exito"
-                    resultado_texto.color = ft.Colors.GREEN_600
-
-                else:
-                    elementos_seleccionados["imagen"] = None
-                    resultado_texto.value = "Error NO es un archivo PNG."
-                    resultado_texto.color = ft.Colors.RED_600
-                    ventana_de_alerta("ERROR AL SELECIONAR IMAGEN","LA IMAGEN PROPORCIONADA NO CUMPLE CON EL FORMATO")
-
-                    
-            page.update()
-
-        def confirmar_click():
-            if elementos_seleccionados["categorias"] == None or elementos_seleccionados["marcas"] == None:
-                ventana_de_alerta("ELEMENTOS INCOMPLETOS", "ASEGURESE DE COMPLETAR TODOS LOS ELEMENTOS REQUERIDOS")
-            elif not nombre.value or not nombre.value.strip():
-                ventana_de_alerta("ELEMENTOS INCOMPLETOS", "EL PRODUCTO DEBE TENER UN NOMBRE")
-            else:
-                origen = elementos_seleccionados["imagen"]
-
-                retorno = inventario.modificar_producto(
-                    datos["id"], 
-                    elementos_seleccionados["categorias"],
-                    elementos_seleccionados["marcas"],
-                    nombre.value.strip(),
-                    precio.value,
-                    origen,
-                )
-                if isinstance(retorno, tuple):        
-                    ventana_de_alerta(*retorno)
-                else:                                    
-                    page.pop_dialog()
-                    mostrar(None)
-          
-            
-        def menu_click(e, clave):
-            if clave=="categorias":
-                elementos_seleccionados["categorias"]= e.control.content
-                categoria_seleccionada.value=f"{e.control.content}"
-            elif clave=="marcas":
-                elementos_seleccionados["marcas"]= e.control.content
-                marca_seleccionada.value=f"{e.control.content}"
-                 
-
-        elementos= inventario.listar_elementos_producto()
-        elementos_diccionario={"categorias":elementos[0], "marcas":elementos[1]}
-        menu_bar_controles = []
-        elementos_seleccionados={"categorias":datos["categoria"], "marcas":datos["marca"], "imagen": datos["url"]}
-        resultado_texto = ft.Text(value="Ningún archivo nuevo seleccionado", size=16, weight=ft.FontWeight.BOLD)
-        categoria_seleccionada= ft.Text(value=datos["categoria"], size=16, weight=ft.FontWeight.BOLD)
-        marca_seleccionada= ft.Text(value=datos["marca"], size=16, weight=ft.FontWeight.BOLD)
-        imagen_preview=ft.Image(
-             src=datos["url"],
-             width=200,
-             height=200,
-             fit=ft.BoxFit.CONTAIN
-        )
-        precio=ft.TextField(
-             hint_text=datos["precio"],
-             value=datos["precio"]
-        )
-        nombre=ft.TextField(
-             hint_text="Nombre",
-             value=datos["nombre"]
+        return ft.Button(
+            content=ft.Text(
+                contenido.upper(),
+                size=11,
+                weight=ft.FontWeight.W_600,
+                font_family=estilos.FUENTE_TEXTO,
+            ),
+            icon=icono,
+            on_click=lambda e: accion(),
+            style=ft.ButtonStyle(
+                bgcolor=fondo,
+                color=color_texto,
+                side=borde,
+                shape=ft.RoundedRectangleBorder(radius=12),
+                padding=ft.Padding.symmetric(horizontal=16, vertical=16),
+                overlay_color=ft.Colors.with_opacity(0.08, estilos.TEXTO),
+            ),
         )
 
-        for clave, lista in elementos_diccionario.items():
-            opciones=[]
+    def caja_campo(control):
+        return ft.Container(
+            content=control,
+            bgcolor=estilos.COLOR_CAMPO,
+            border_radius=14,
+            padding=ft.Padding.symmetric(horizontal=12),
+            border=ft.Border.all(1, BORDE_CLARO),
+        )
 
-            for option_text in lista:
-                            opciones.append(
-                                ft.MenuItemButton(
-                                    option_text,
-                                    on_click=lambda e, c=clave:menu_click(e,c),
-                                )
-                            )
+    def campo_texto(titulo, hint="", valor=None, **kwargs):
+        entrada = ft.TextField(
+            hint_text=hint,
+            value=valor,
+            border=ft.InputBorder.NONE,
+            text_size=13,
+            color=estilos.TEXTO,
+            **kwargs,
+        )
+        return ft.Column(
+            controls=[etiqueta(titulo), caja_campo(entrada)],
+            spacing=6,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        ), entrada
 
-            menu_bar_controles.append(
-                ft.SubmenuButton(
-                    clave.upper(),                  
-                    controls=opciones,
-                )
-            )
+    def campo_selector(titulo, opciones, valor, al_elegir):
+        selector = ft.Dropdown(
+            value=valor,
+            hint_text="Seleccionar",
+            options=[ft.DropdownOption(key=o, text=o.upper()) for o in opciones],
+            on_select=lambda e: al_elegir(e.control.value),
+            border=ft.InputBorder.NONE,
+            text_size=13,
+            color=estilos.TEXTO,
+        )
+        selector.expand = True
+        return ft.Column(
+            controls=[etiqueta(titulo), caja_campo(ft.Row(controls=[selector]))],
+            spacing=6,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        ), selector
 
-        page.show_dialog(
-                    ft.AlertDialog(
-                            modal=True,
-                            title=ft.Text("MODIFICAR PRODUCTO"),
-                            content=ft.Column(
-                                 controls=[
-                                    ft.Button(
-                                        content=ft.Text("Seleccionar archivo"),
-                                        icon=ft.Icons.UPLOAD_FILE,
-                                        on_click=seleccionar_archivo
-                                        ),
-                                        ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
-                                    resultado_texto,
-                                    imagen_preview,
-                                    ft.MenuBar(
-                                        expand=True,
-                                        style=ft.MenuStyle(alignment=ft.Alignment.TOP_LEFT),
-                                        controls=menu_bar_controles,
-                                        ),
-                                    categoria_seleccionada,
-                                    marca_seleccionada,
-                                    precio,
-                                    nombre,
-                                    ft.Row(
-                                         controls=[
-                                                ft.Button(
-                                                   content="Agregar categoria",
-                                                   on_click=lambda: agregar_clik("categoria")
-                                            ),
-                                                ft.Button(
-                                                   content="Agregar marca",
-                                                   on_click=lambda: agregar_clik("marca")
-                                            )
-                                         ]
-                                    )
-                                 ]
-                            )
-                            ,
-                            actions=[
-                                    ft.Button("CONFIRMAR",on_click=lambda e:confirmar_click()),
-                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
-                                ],
-                            actions_alignment=ft.MainAxisAlignment.END,))
-
-    def eliminar():
-        def confirmar_click():
-             nonlocal producto_en_seleccion
-             retorno = inventario.eliminar_producto(producto_en_seleccion)
-             page.pop_dialog()
-             if isinstance(retorno, tuple):
-                 ventana_de_alerta(*retorno)
-                 return
-             producto_en_seleccion = None
-             mostrar(None)
-
-        if producto_en_seleccion==None:
-            ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA ELIMINAR")
-        else:
-             nombre_producto = inventario.consultar_producto_especifico(producto_en_seleccion)["nombre"]
-             return page.show_dialog(
-                                ft.AlertDialog(
-                                        modal=True,
-                                        title=ft.Text("ELIMINAR PRODUCTO"),
-                                        content=ft.Column(
-                                            ft.Text(f"¿ESTA SEGURO DE ELIMINAR \"{nombre_producto}\" DE LA TIENDA?")
-                                        ),
-                                        actions=[
-                                                ft.Button("CONFIRMAR",on_click=lambda e: confirmar_click()),
-                                                ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
-                                            ],
-                                        actions_alignment=ft.MainAxisAlignment.END,))
-
-    def agregar_stock():
-        def confirmar_click():
-            if color_seleccionado is None:
-                ventana_de_alerta("ERROR DE STOCK","DEBE SELECCIONAR UN COLOR")
-                return
-
-            lista = []
-
-            for talle, i in campos_stock.items():
-                if i.value:
-                    lista.append({"id": producto_en_seleccion,"color": color_seleccionado,"talle": talle,"cantidad": i.value})
-
-            if not lista:
-                ventana_de_alerta("ERROR DE STOCK","DEBE INGRESAR AL MENOS UNA CANTIDAD")
-                return
-
-            retorno = inventario.agregar_stock(lista)
-
-            if retorno is not None:
-                ventana_de_alerta(*retorno)
-            else:
-                page.pop_dialog()
-                agregar_stock()
-
-        if not producto_en_seleccion:
-            ventana_de_alerta("ERROR DE SELECCION","NO SE SELECCIONO EL PRODUCTO PARA AGREGAR STOCK")
-            return
-
-        nombre_producto = inventario.consultar_producto_especifico(producto_en_seleccion)["nombre"]
-        retorno = inventario.listar_stock(producto_en_seleccion)
-
-        colores = retorno["colores"]
-        talles = retorno["talles"]
-        variantes = retorno["diccionario"]
-        color_seleccionado=None
-
-        tabla_talles = ft.Column(visible=False)
-        lista_disponibles = ft.Column(visible=False)
-
-        campos_stock = {}
-
-        def seleccionar_color(e, color):
-
-            tabla_talles.controls.clear()
-            lista_disponibles.controls.clear()
-            campos_stock.clear()
-            nonlocal color_seleccionado
-            color_seleccionado=color
-            divisor.visible=True
-
-            variantes_color = [
-                v for v in variantes
-                if v["color"] == color
-            ]
-
-            controles_talles = []
-
-            for talle in talles:
-
-                cantidad = next(
-                    (
-                        v["cantidad"]
-                        for v in variantes_color
-                        if v["talle"] == talle
-                    ),
-                    0
-                )
-
-                campo = ft.TextField(
-                    width=45,
-                    height=40,
-                    text_size=12,
-                    content_padding=5,
-                    keyboard_type=ft.KeyboardType.NUMBER
-                )
-
-                campos_stock[talle] = campo
-
-                controles_talles.append(
-                    ft.Column(
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        spacing=5,
+    def mostrar_panel(titulo, controles, subtitulo="Formulario Eclipsis"):
+        contenedor_principal.content = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Row(
                         controls=[
-                            ft.Text(
-                                talle,
-                                weight=ft.FontWeight.BOLD
-                            ),
-                            ft.Text(
-                                str(cantidad),
-                                size=12
-                            ),
-                            campo
-                        ]
-                    )
-                )
-
-            tabla_talles.controls.extend([
-                ft.Text(
-                    f"Stock de {color}",
-                    size=16,
-                    weight=ft.FontWeight.BOLD
-                ),
-                ft.Row(
-                    controls=controles_talles,
-                    alignment=ft.MainAxisAlignment.CENTER
-                )
-            ])
-
-            disponibles = [
-                v for v in variantes_color
-                if int(v["cantidad"]) > 0
-            ]
-
-            lista_disponibles.controls.append(
-                ft.Text(
-                    "Talles disponibles:",
-                    weight=ft.FontWeight.BOLD
-                )
-            )
-
-            for variante in disponibles:
-                lista_disponibles.controls.append(
-                    ft.Text(
-                        f'{variante["talle"]} → {variante["cantidad"]}'
-                    )
-                )
-
-            tabla_talles.visible = True
-            lista_disponibles.visible = True
-
-            page.update()
-
-        opciones_colores = [
-            ft.MenuItemButton(
-                content=color,
-                on_click=lambda e, c=color: seleccionar_color(e, c)
-            )
-            for color in colores
-        ]
-
-        menu_colores = ft.SubmenuButton(
-            "COLORES",
-            controls=opciones_colores
-        )
-        divisor=ft.Divider(visible=False)
-
-        page.show_dialog(
-            ft.AlertDialog(
-                modal=True,
-                title=ft.Text(f"VENTANA DE STOCK - {nombre_producto}"),
-                content=ft.Container(
-                    width=350,
-                    content=ft.Column(
-                        controls=[
-                            ft.Text("Seleccione color:"),
-
-                            ft.MenuBar(
+                            ft.Column(
                                 controls=[
-                                    menu_colores
-                                ]
+                                    etiqueta(subtitulo),
+                                    texto(titulo.upper(), size=28, bold=True, titulo=True),
+                                ],
+                                spacing=2,
+                                expand=True,
                             ),
-                            divisor,
-                            tabla_talles,
-                            lista_disponibles
-                        ]
-                    )
-                ),
-                actions=[
-                    ft.Button(
-                        "CONFIRMAR",
-                        on_click=lambda e: confirmar_click()
+                            boton("Cancelar", ft.Icons.CLOSE, lambda: mostrar(None)),
+                        ],
+                        vertical_alignment=ft.CrossAxisAlignment.START,
                     ),
-                    ft.Button(
-                        "CANCELAR",
-                        on_click=lambda e: page.pop_dialog()
-                    )
+                    ft.Divider(color=estilos.SOMBRA_OSCURA),
+                    *controles,
                 ],
-                actions_alignment=ft.MainAxisAlignment.END
-            )
+                scroll=ft.ScrollMode.AUTO,
+                spacing=20,
+                expand=True,
+            ),
+            bgcolor=estilos.FONDO,
+            shadow=estilos.sombra_neu(12, 24),
+            border=ft.Border.all(1, BORDE_CLARO),
+            border_radius=32,
+            padding=30,
+            expand=True,
+            margin=ft.Margin.only(right=14, bottom=14),
+        )
+        page.update()
+
+    def fila_botones(funcion_confirmar, texto_confirmar="Confirmar"):
+        return ft.Row(
+            controls=[
+                boton("Cancelar", None, lambda: mostrar(None)),
+                boton(texto_confirmar, ft.Icons.SAVE, funcion_confirmar, "primario"),
+            ],
+            alignment=ft.MainAxisAlignment.END,
         )
 
     def ventana_de_alerta(texto_superior, erratas):
@@ -397,252 +165,606 @@ def AdminVista(page, ir_a_login, usuario):
                                 ],
                             actions_alignment=ft.MainAxisAlignment.END,))
 
-    def ventana_agregar_producto(texto_superior):
-        def agregar_clik(texto):
-            page.pop_dialog()
-            agregar(texto)
+    def formulario_producto(texto_superior, datos=None):
+        modificando = datos is not None
 
         async def seleccionar_archivo(e):
             files = await ft.FilePicker().pick_files(
                 allow_multiple=False,
-                allowed_extensions=["png"] 
+                allowed_extensions=["png"]
             )
             if files:
                 archivo = files[0]
                 nombre_archivo = archivo.name
-                        
+
                 if nombre_archivo.lower().endswith('.png'):
                     imagen_preview.src=archivo.path
                     imagen_preview.visible=True
+                    icono_preview.visible=False
                     elementos_seleccionados["imagen"] = archivo.path
                     resultado_texto.value = "Archivo seleccionado con exito"
                     resultado_texto.color = ft.Colors.GREEN_600
 
                 else:
-                    elementos_seleccionados["imagen"] = None
+                    elementos_seleccionados["imagen"] = datos["url"] if modificando else None
                     resultado_texto.value = "Error NO es un archivo PNG."
                     resultado_texto.color = ft.Colors.RED_600
                     ventana_de_alerta("ERROR AL SELECIONAR IMAGEN","LA IMAGEN PROPORCIONADA NO CUMPLE CON EL FORMATO")
 
-                    
             page.update()
 
         def confirmar_click():
+            nonlocal producto_en_seleccion
             if elementos_seleccionados["categorias"] == None or elementos_seleccionados["marcas"] == None:
                 ventana_de_alerta("ELEMENTOS INCOMPLETOS", "ASEGURESE DE COMPLETAR TODOS LOS ELEMENTOS REQUERIDOS")
-            else:
-                origen = elementos_seleccionados["imagen"]
+                return
 
+            if modificando:
+                if not nombre.value or not nombre.value.strip():
+                    ventana_de_alerta("ELEMENTOS INCOMPLETOS", "EL PRODUCTO DEBE TENER UN NOMBRE")
+                    return
+                retorno = inventario.modificar_producto(
+                    datos["id"],
+                    elementos_seleccionados["categorias"],
+                    elementos_seleccionados["marcas"],
+                    nombre.value.strip(),
+                    precio.value,
+                    elementos_seleccionados["imagen"],
+                )
+            else:
                 retorno = inventario.agregar_producto(
                     elementos_seleccionados["categorias"],
                     elementos_seleccionados["marcas"],
                     nombre.value,
                     precio.value,
-                    origen,
+                    elementos_seleccionados["imagen"],
                 )
-                if isinstance(retorno, tuple):        
-                    ventana_de_alerta(*retorno)
-                else:                                    
-                    page.pop_dialog()
-                    mostrar(None)
-                    if check_stock.value:
-                        nonlocal producto_en_seleccion
-                        producto_en_seleccion = retorno
-                        agregar_stock()
-            
-        def menu_click(e, clave):
-            if clave=="categorias":
-                elementos_seleccionados["categorias"]= e.control.content
-                categoria_seleccionada.value=f"{e.control.content}"
-            elif clave=="marcas":
-                elementos_seleccionados["marcas"]= e.control.content
-                marca_seleccionada.value=f"{e.control.content}"
-                 
+
+            if isinstance(retorno, tuple):
+                ventana_de_alerta(*retorno)
+                return
+
+            if not modificando and check_stock.value:
+                producto_en_seleccion = retorno
+                mostrar(None)
+                agregar_stock()
+            else:
+                mostrar(None)
+
+        def elegir(clave, valor):
+            elementos_seleccionados[clave] = valor
 
         elementos= inventario.listar_elementos_producto()
-        elementos_diccionario={"categorias":elementos[0], "marcas":elementos[1]}
-        menu_bar_controles = []
-        elementos_seleccionados={"categorias":None, "marcas":None, "imagen": None}
-        resultado_texto = ft.Text(value="Ningún archivo seleccionado", size=16, weight=ft.FontWeight.BOLD)
-        categoria_seleccionada= ft.Text(value="Ningúna categoría seleccionada", size=16, weight=ft.FontWeight.BOLD)
-        marca_seleccionada= ft.Text(value="Ningúna marca seleccionada", size=16, weight=ft.FontWeight.BOLD)
+        elementos_seleccionados={
+            "categorias": datos["categoria"] if modificando else None,
+            "marcas": datos["marca"] if modificando else None,
+            "imagen": datos["url"] if modificando else None,
+        }
+        resultado_texto = texto(
+            "Ningún archivo nuevo seleccionado" if modificando else "Ningún archivo seleccionado",
+            size=12, color=estilos.TEXTO_SUAVE,
+        )
         imagen_preview=ft.Image(
-             src="",
-             width=200,
-             height=200,
-             fit=ft.BoxFit.CONTAIN,
-             visible=False
+             src=datos["url"] if modificando else "",
+             fit=ft.BoxFit.COVER,
+             visible=modificando,
         )
-        precio=ft.TextField(
-             hint_text="Precio"
+        icono_preview = ft.Icon(ft.Icons.IMAGE, color=estilos.TEXTO_SUAVE, visible=not modificando)
+        vista_previa = ft.Container(
+            content=ft.Stack(
+                controls=[
+                    ft.Container(content=icono_preview, alignment=ft.Alignment.CENTER, expand=True),
+                    imagen_preview,
+                ],
+            ),
+            width=90,
+            height=90,
+            bgcolor=estilos.COLOR_CAMPO,
+            border_radius=16,
+            border=ft.Border.all(1, BORDE_CLARO),
+            shadow=estilos.sombra_neu(4, 8),
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
         )
-        nombre=ft.TextField(
-             hint_text="Nombre"
+
+        columna_nombre, nombre = campo_texto(
+            "Nombre del producto *", "Nombre", datos["nombre"] if modificando else None
         )
-        check_stock = ft.Checkbox(label="Agregar stock al crear el producto", value=False)
+        columna_precio, precio = campo_texto(
+            "Precio *", "Precio", str(datos["precio"]) if modificando else None
+        )
+        columna_marca, _ = campo_selector(
+            "Marca *", elementos[1], datos["marca"] if modificando else None,
+            lambda v: elegir("marcas", v),
+        )
+        columna_categoria, _ = campo_selector(
+            "Categoría *", elementos[0], datos["categoria"] if modificando else None,
+            lambda v: elegir("categorias", v),
+        )
+        boton_archivo = boton("Seleccionar archivo", ft.Icons.UPLOAD_FILE, lambda: None)
+        boton_archivo.on_click = seleccionar_archivo
+        check_stock = ft.Checkbox(
+            label="Agregar stock al crear el producto",
+            value=False,
+            active_color=estilos.TEXTO,
+        )
 
-        for clave, lista in elementos_diccionario.items():
-            opciones=[]
+        for columna in (columna_nombre, columna_precio, columna_marca, columna_categoria):
+            columna.expand = True
 
-            for option_text in lista:
-                            opciones.append(
-                                ft.MenuItemButton(
-                                    option_text,
-                                    on_click=lambda e, c=clave:menu_click(e,c),
-                                )
-                            )
-
-            menu_bar_controles.append(
-                ft.SubmenuButton(
-                    clave.upper(),                  
-                    controls=opciones,
-                )
-            )
-
-        page.show_dialog(
-                    ft.AlertDialog(
-                            modal=True,
-                            title=ft.Text(texto_superior),
-                            content=ft.Column(
-                                 controls=[
-                                    ft.Button(
-                                        content=ft.Text("Seleccionar archivo"),
-                                        icon=ft.Icons.UPLOAD_FILE,
-                                        on_click=seleccionar_archivo
-                                        ),
-                                        ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
+        controles = [
+            ft.Row(controls=[columna_nombre, columna_precio], spacing=20),
+            ft.Row(controls=[columna_marca, columna_categoria], spacing=20),
+            ft.Row(
+                controls=[
+                    boton("Nueva marca", ft.Icons.ADD, lambda: agregar("marca")),
+                    boton("Nueva categoría", ft.Icons.ADD, lambda: agregar("categoria")),
+                ],
+                spacing=12,
+            ),
+            ft.Column(
+                controls=[
+                    etiqueta("Imagen (PNG)"),
+                    ft.Row(
+                        controls=[
+                            vista_previa,
+                            ft.Column(
+                                controls=[
+                                    boton_archivo,
                                     resultado_texto,
-                                    imagen_preview,
-                                    ft.MenuBar(
-                                        expand=True,
-                                        style=ft.MenuStyle(alignment=ft.Alignment.TOP_LEFT),
-                                        controls=menu_bar_controles,
-                                        ),
-                                    categoria_seleccionada,
-                                    marca_seleccionada,
-                                    precio,
-                                    nombre,
-                                    check_stock,
-                                    ft.Row(
-                                         controls=[
-                                                ft.Button(
-                                                   content="Agregar categoria",
-                                                   on_click=lambda: agregar_clik("categoria")
-                                            ),
-                                                ft.Button(
-                                                   content="Agregar marca",
-                                                   on_click=lambda: agregar_clik("marca")
-                                            )
-                                         ]
-                                    )
-                                 ]
-                            )
-                            ,
-                            actions=[
-                                    ft.Button("CONFIRMAR",on_click=lambda e:confirmar_click()),
-                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
                                 ],
-                            actions_alignment=ft.MainAxisAlignment.END,))
+                                spacing=8,
+                            ),
+                        ],
+                        spacing=20,
+                    ),
+                ],
+                spacing=8,
+            ),
+        ]
+        if not modificando:
+            controles.append(check_stock)
+        controles.append(ft.Divider(color=estilos.SOMBRA_OSCURA))
+        controles.append(fila_botones(confirmar_click, "Guardar producto"))
+
+        mostrar_panel(texto_superior, controles)
+
+    def modificar():
+        if producto_en_seleccion is None:
+            ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA MODIFICAR")
+            return
+        datos = inventario.consultar_producto_especifico(producto_en_seleccion)
+        formulario_producto("MODIFICAR PRODUCTO", datos)
+
+    def eliminar():
+        def confirmar_click():
+             nonlocal producto_en_seleccion
+             retorno = inventario.eliminar_producto(producto_en_seleccion)
+             if isinstance(retorno, tuple):
+                 ventana_de_alerta(*retorno)
+                 return
+             producto_en_seleccion = None
+             mostrar(None)
+
+        if producto_en_seleccion==None:
+            ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA ELIMINAR")
+        else:
+             nombre_producto = inventario.consultar_producto_especifico(producto_en_seleccion)["nombre"]
+             mostrar_panel(
+                 "ELIMINAR PRODUCTO",
+                 [
+                     ft.Container(
+                         content=ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color="#DC2626", size=36),
+                         width=64,
+                         height=64,
+                         bgcolor="#FEE2E2",
+                         border_radius=16,
+                         alignment=ft.Alignment.CENTER,
+                     ),
+                     texto(f"¿ESTA SEGURO DE ELIMINAR \"{nombre_producto}\" DE LA TIENDA?", size=15),
+                     ft.Row(
+                         controls=[
+                             boton("Cancelar", None, lambda: mostrar(None)),
+                             boton("Sí, eliminar", ft.Icons.DELETE, confirmar_click, "peligro"),
+                         ],
+                     ),
+                 ],
+                 "Confirmación",
+             )
+
+    def agregar_stock(color_inicial=None):
+        if not producto_en_seleccion:
+            ventana_de_alerta("ERROR DE SELECCION","NO SE SELECCIONO EL PRODUCTO PARA AGREGAR STOCK")
+            return
+
+        nombre_producto = inventario.consultar_producto_especifico(producto_en_seleccion)["nombre"]
+        colores = inventario.listar_colores()
+        talles = inventario.listar_talles()
+        variantes = inventario.listar_stock(producto_en_seleccion)["diccionario"]
+        color_seleccionado = None
+
+        tabla_talles = ft.Column(visible=False, spacing=12)
+        lista_disponibles = ft.Column(visible=False, spacing=4)
+        campos_stock = {}
+
+        def confirmar_click():
+            if color_seleccionado is None:
+                ventana_de_alerta("ERROR DE STOCK","DEBE SELECCIONAR UN COLOR")
+                return
+
+            lista = []
+
+            for talle, i in campos_stock.items():
+                if i.value:
+                    lista.append({"id": producto_en_seleccion,"color": color_seleccionado,"talle": talle,"cantidad": i.value})
+
+            if not lista:
+                ventana_de_alerta("ERROR DE STOCK","DEBE INGRESAR AL MENOS UNA CANTIDAD")
+                return
+
+            retorno = inventario.agregar_stock(lista)
+
+            if retorno is not None:
+                ventana_de_alerta(*retorno)
+            else:
+                agregar_stock(color_seleccionado)
+
+        def seleccionar_color(color):
+            nonlocal color_seleccionado
+            tabla_talles.controls.clear()
+            lista_disponibles.controls.clear()
+            campos_stock.clear()
+            color_seleccionado=color
+
+            variantes_color = [
+                v for v in variantes
+                if v["color"] == color
+            ]
+
+            controles_talles = []
+
+            for talle in talles:
+
+                cantidad = next(
+                    (
+                        v["cantidad"]
+                        for v in variantes_color
+                        if v["talle"] == talle
+                    ),
+                    0
+                )
+
+                campo = ft.TextField(
+                    width=70,
+                    text_align=ft.TextAlign.CENTER,
+                    text_size=13,
+                    border=ft.InputBorder.NONE,
+                    content_padding=8,
+                    keyboard_type=ft.KeyboardType.NUMBER
+                )
+
+                campos_stock[talle] = campo
+
+                controles_talles.append(
+                    ft.Container(
+                        content=ft.Column(
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            spacing=6,
+                            controls=[
+                                texto(f"Talle {talle}", size=16, bold=True, titulo=True),
+                                texto(f"Actual: {cantidad}", size=12, color=estilos.TEXTO_SUAVE),
+                                caja_campo(campo),
+                            ]
+                        ),
+                        bgcolor=estilos.BLANCO,
+                        border=ft.Border.all(1, estilos.SOMBRA_OSCURA),
+                        border_radius=16,
+                        padding=14,
+                    )
+                )
+
+            tabla_talles.controls.extend([
+                texto(f"Stock de {color}", size=16, bold=True, titulo=True),
+                ft.Row(
+                    controls=controles_talles,
+                    alignment=ft.MainAxisAlignment.START,
+                    wrap=True,
+                    spacing=12,
+                    run_spacing=12,
+                )
+            ])
+
+            disponibles = [
+                v for v in variantes_color
+                if int(v["cantidad"]) > 0
+            ]
+
+            lista_disponibles.controls.append(etiqueta("Talles disponibles"))
+
+            for variante in disponibles:
+                lista_disponibles.controls.append(
+                    texto(f'{variante["talle"]} → {variante["cantidad"]}', size=13)
+                )
+
+            tabla_talles.visible = True
+            lista_disponibles.visible = True
+
+            page.update()
+
+        columna_color, _ = campo_selector("Color", colores, None, seleccionar_color)
+        columna_color.width = 320
+
+        mostrar_panel(
+            f"STOCK - {nombre_producto}",
+            [
+                columna_color,
+                tabla_talles,
+                lista_disponibles,
+                ft.Divider(color=estilos.SOMBRA_OSCURA),
+                fila_botones(confirmar_click, "Actualizar stock"),
+            ],
+            "Ajuste de inventario",
+        )
+
+        if color_inicial in colores:
+            columna_color.controls[1].content.controls[0].value = color_inicial
+            seleccionar_color(color_inicial)
 
     def ventana_con_entradas(texto_superior,tipo, funcion):
-        entrada= ft.TextField(
-                         hint_text=tipo
-                    )
+        columna, entrada = campo_texto(f"Nombre de la {tipo} *", tipo)
+        columna.width = 420
+
         def confirmar_click():
             valor_entrada=entrada.value
             retorno=funcion(valor_entrada)
             if retorno != None:
                    ventana_de_alerta(*retorno)
             else:
-                page.pop_dialog()
+                mostrar(None)
 
-        return page.show_dialog(
-            ft.AlertDialog(
-                    modal=True,
-                    title=ft.Text(texto_superior),
-                    content=ft.Column(
-                            entrada
-                    ),
-                    actions=[
-                            ft.Button("CONFIRMAR",on_click=lambda e:confirmar_click()),
-                            ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
+        mostrar_panel(texto_superior, [columna, fila_botones(confirmar_click)])
+
+    def ventana_agregar_color(texto_superior):
+        color_elegido = {"hex": "#000000"}
+        columna_nombre, nombre = campo_texto("Nombre del color *", "color")
+        columna_nombre.width = 420
+        vista_previa = ft.Container(
+            width=40, height=40, border_radius=20,
+            bgcolor=color_elegido["hex"],
+            border=ft.Border.all(1, ft.Colors.GREY_400),
+        )
+        texto_hex = texto(color_elegido["hex"], bold=True)
+
+        def al_cambiar_color(e):
+            codigo = e.data
+            if codigo is None:
+                return
+            color_elegido["hex"] = codigo
+            vista_previa.bgcolor = codigo
+            texto_hex.value = codigo
+            page.update()
+
+        selector = fcp.ColorPicker(
+            color=color_elegido["hex"],
+            enable_alpha=False,
+            hex_input_bar=True,
+            color_picker_width=300,
+            on_color_change=al_cambiar_color,
+        )
+
+        def confirmar_click():
+            retorno = inventario.agregar_color(nombre.value, color_elegido["hex"])
+            if retorno is not None:
+                ventana_de_alerta(*retorno)
+            else:
+                mostrar(None)
+
+        mostrar_panel(
+            texto_superior,
+            [
+                columna_nombre,
+                etiqueta("Seleccionar tono"),
+                selector,
+                ft.Row(controls=[vista_previa, texto_hex], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                fila_botones(confirmar_click),
+            ],
+        )
+
+    def ver_cuentas():
+        usuarios = Usuario.listar_usuarios()
+        filas = []
+
+        for u in usuarios:
+            es_admin = u["rol"] == "admin"
+            filas.append(
+                ft.Container(
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(
+                                content=ft.Icon(
+                                    ft.Icons.PERSON,
+                                    color=estilos.FONDO if es_admin else estilos.TEXTO,
+                                    size=20,
+                                ),
+                                width=40,
+                                height=40,
+                                bgcolor=estilos.TEXTO if es_admin else estilos.BLANCO,
+                                border_radius=12,
+                                alignment=ft.Alignment.CENTER,
+                            ),
+                            ft.Column(
+                                controls=[
+                                    texto(f'{u["nombre"]} {u["apellido"]}', bold=True, titulo=True),
+                                    texto(u["email"], size=12, color=estilos.TEXTO_SUAVE),
+                                ],
+                                spacing=2,
+                                expand=True,
+                            ),
+                            ft.Container(
+                                content=texto(
+                                    u["rol"].upper(), size=10, bold=True,
+                                    color=estilos.FONDO if es_admin else estilos.TEXTO,
+                                ),
+                                bgcolor=estilos.TEXTO if es_admin else estilos.BLANCO,
+                                border=ft.Border.all(1, estilos.SOMBRA_OSCURA),
+                                border_radius=20,
+                                padding=ft.Padding.symmetric(horizontal=12, vertical=5),
+                            ),
                         ],
-                    actions_alignment=ft.MainAxisAlignment.END,))
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=14,
+                    ),
+                    bgcolor=ft.Colors.with_opacity(0.6, estilos.BLANCO),
+                    border=ft.Border.all(1, BORDE_CLARO),
+                    border_radius=16,
+                    padding=14,
+                )
+            )
+
+        mostrar_panel(
+            "CUENTAS DE USUARIOS",
+            [
+                texto(f"{len(usuarios)} cuentas registradas", size=13, color=estilos.TEXTO_SUAVE),
+                *filas,
+            ],
+            "Usuarios",
+        )
+
+    def agregar_administrador():
+        columna_nombre, nombre = campo_texto("Nombre *", "Nombre")
+        columna_apellido, apellido = campo_texto("Apellido *", "Apellido")
+        columna_email, email = campo_texto("Correo *", "Correo")
+        columna_clave, clave = campo_texto(
+            "Contraseña *", "Contraseña", password=True, can_reveal_password=True
+        )
+        for columna in (columna_nombre, columna_apellido, columna_email, columna_clave):
+            columna.expand = True
+
+        def confirmar_click():
+            retorno = Usuario.registrar_admin(
+                nombre.value or "", apellido.value or "", email.value or "", clave.value or ""
+            )
+            if retorno is not None:
+                ventana_de_alerta(*retorno)
+            else:
+                ver_cuentas()
+
+        mostrar_panel(
+            "AGREGAR ADMINISTRADOR",
+            [
+                ft.Row(controls=[columna_nombre, columna_apellido], spacing=20),
+                ft.Row(controls=[columna_email, columna_clave], spacing=20),
+                ft.Divider(color=estilos.SOMBRA_OSCURA),
+                fila_botones(confirmar_click, "Crear cuenta"),
+            ],
+            "Cuentas",
+        )
+
+    def estilo_tarjeta(tarjeta, activa):
+        tarjeta.border = ft.Border.all(2.5 if activa else 1, estilos.TEXTO if activa else BORDE_CLARO)
 
     def cambiar_seleccion(e, id, tarjeta_container):
         nonlocal producto_en_seleccion, tarjeta_seleccionada_ref
 
         if tarjeta_seleccionada_ref is not None:
-            tarjeta_seleccionada_ref.bgcolor = ft.Colors.WHITE
-            tarjeta_seleccionada_ref.border = ft.Border(
-                top=ft.BorderSide(1, ft.Colors.GREY_300),
-                bottom=ft.BorderSide(1, ft.Colors.GREY_300),
-                left=ft.BorderSide(1, ft.Colors.GREY_300),
-                right=ft.BorderSide(1, ft.Colors.GREY_300)
-            )
+            estilo_tarjeta(tarjeta_seleccionada_ref, False)
 
         producto_en_seleccion = id
         tarjeta_seleccionada_ref = tarjeta_container
-
-        tarjeta_seleccionada_ref.bgcolor = ft.Colors.BLUE_50
-        tarjeta_seleccionada_ref.border = ft.Border(
-            top=ft.BorderSide(2, ft.Colors.BLUE_600),
-            bottom=ft.BorderSide(2, ft.Colors.BLUE_600),
-            left=ft.BorderSide(2, ft.Colors.BLUE_600),
-            right=ft.BorderSide(2, ft.Colors.BLUE_600)
-        )
+        estilo_tarjeta(tarjeta_seleccionada_ref, True)
 
         page.update()
         print(f"Producto seleccionado ID: {producto_en_seleccion}")
+
+    def pastilla(valor, oscura):
+        return ft.Container(
+            content=texto(
+                valor.upper(), size=10, bold=True,
+                color=ft.Colors.WHITE if oscura else estilos.TEXTO,
+                max_lines=1,
+            ),
+            bgcolor=ft.Colors.with_opacity(0.7, estilos.OSCURO) if oscura else ft.Colors.with_opacity(0.85, ft.Colors.WHITE),
+            border=ft.Border.all(1, ft.Colors.with_opacity(0.3, ft.Colors.WHITE)),
+            border_radius=20,
+            padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+        )
+
+    def tarjeta_de_producto(p, stock):
+        tarjeta = ft.Container(
+            content=ft.Stack(
+                controls=[
+                    ft.Container(
+                        content=ft.Image(src=p.imagen, fit=ft.BoxFit.COVER),
+                        left=0, top=0, right=0, bottom=0,
+                        border_radius=20,
+                        clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+                    ),
+                    ft.Container(
+                        content=ft.Row(
+                            controls=[pastilla(p.categoria, True), pastilla(p.marca, False)],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        left=12, top=12, right=12,
+                    ),
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                texto(p.nombre.upper(), size=14, bold=True, titulo=True, color=ft.Colors.WHITE, max_lines=1),
+                                ft.Row(
+                                    controls=[
+                                        texto(p.precio, size=16, bold=True, titulo=True, color=ft.Colors.WHITE),
+                                        texto(
+                                            f"Stock: {stock} un.", size=11,
+                                            color=ft.Colors.AMBER_200 if stock < 10 else ft.Colors.GREY_300,
+                                        ),
+                                    ],
+                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                ),
+                            ],
+                            spacing=4,
+                            tight=True,
+                        ),
+                        left=0, right=0, bottom=0,
+                        padding=ft.Padding.symmetric(horizontal=16, vertical=14),
+                        bgcolor=ft.Colors.with_opacity(0.75, estilos.OSCURO),
+                        blur=ft.Blur(16, 16),
+                        border_radius=ft.BorderRadius.only(bottom_left=20, bottom_right=20),
+                    ),
+                ],
+            ),
+            padding=8,
+            bgcolor=estilos.FONDO,
+            shadow=estilos.sombra_neu(6, 12),
+            border_radius=28,
+        )
+        estilo_tarjeta(tarjeta, p.id == producto_en_seleccion)
+        return tarjeta
 
     def mostrar(producto):
         nonlocal tarjeta_seleccionada_ref
         tarjeta_seleccionada_ref = None
         lista_productos = inventario.listar_productos(producto)
         grid_productos.controls.clear()
-        
-        for p in lista_productos:
-            tarjeta_producto = ft.Container(
-                content=ft.Column(
-                    controls=[
-                        ft.Image(
-                            src=p.imagen,
-                            border_radius=10,
-                            fit="cover",
-                            expand=True 
-                        ),
-                        ft.Container(
-                            padding=10,
-                            content=ft.Column(
-                                controls=[
-                                    ft.Text(p.nombre, weight=ft.FontWeight.BOLD, size=16, max_lines=1),
-                                    ft.Text(f"{p.categoria} · {p.marca}", size=12, color=ft.Colors.GREY_700, max_lines=1),
-                                    ft.Text(p.precio, size=14, color=ft.Colors.GREEN_700, weight=ft.FontWeight.W_600),
+        stock_total = 0
 
-                                ],
-                                spacing=5
-                            )
-                        )
-                    ],
-                    spacing=0,
-                ),
-                border=ft.Border.all(
-                    1, ft.Colors.GREY_300
-                ),
-                border_radius=12,
-                bgcolor=ft.Colors.WHITE,
-                shadow=ft.BoxShadow(
-                    blur_radius=10,
-                    color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-                    offset=ft.Offset(0, 4)
-                ),
-            )
-            
+        for p in lista_productos:
+            stock = sum(int(v["cantidad"]) for v in inventario.listar_stock(p.id)["diccionario"])
+            stock_total += stock
+            tarjeta_producto = tarjeta_de_producto(p, stock)
+            if p.id == producto_en_seleccion:
+                tarjeta_seleccionada_ref = tarjeta_producto
+
             tarjeta_producto.on_click = lambda e, id=p.id, tc=tarjeta_producto: cambiar_seleccion(e, id, tc)
             grid_productos.controls.append(tarjeta_producto)
 
+        elementos = inventario.listar_elementos_producto()
+        valor_productos.value = str(len(lista_productos))
+        valor_stock.value = str(stock_total)
+        valor_marcas.value = str(len(elementos[1]))
+        valor_categorias.value = str(len(elementos[0]))
+
+        contenedor_principal.content = grid_productos
         page.update()
-            
+
     def agregar(tipo):
         texto_superior=f"AGREGAR {tipo.upper()}"
         logging.info(f"Se desea agregar {tipo}")
@@ -651,45 +773,174 @@ def AdminVista(page, ir_a_login, usuario):
         elif tipo=="categoria":
             ventana_con_entradas(texto_superior,tipo, inventario.agregar_categoria)
         elif tipo=="color":
-            ventana_con_entradas(texto_superior,tipo, inventario.agregar_color)
+            ventana_agregar_color(texto_superior)
         else:
-            ventana_agregar_producto(texto_superior)
+            formulario_producto(texto_superior)
 
+    def tarjeta_estadistica(icono, titulo, valor, oscuro=False):
+        return ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Container(
+                        content=ft.Icon(icono, color=estilos.FONDO if oscuro else estilos.TEXTO, size=20),
+                        width=40,
+                        height=40,
+                        bgcolor=estilos.TEXTO if oscuro else estilos.BLANCO,
+                        border=ft.Border.all(1, estilos.SOMBRA_OSCURA),
+                        border_radius=12,
+                        alignment=ft.Alignment.CENTER,
+                    ),
+                    ft.Column(
+                        controls=[etiqueta(titulo), valor],
+                        spacing=0,
+                        tight=True,
+                    ),
+                ],
+                spacing=14,
+            ),
+            bgcolor=estilos.FONDO,
+            shadow=estilos.sombra_neu(6, 14),
+            border=ft.Border.all(1, BORDE_CLARO),
+            border_radius=20,
+            padding=16,
+            expand=True,
+        )
+
+    def tarjeta_menu(titulo, icono, controles):
+        return ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Icon(icono, color=estilos.TEXTO, size=18),
+                            ft.Container(
+                                content=texto(titulo.upper(), size=13, bold=True, titulo=True),
+                                expand=True,
+                            ),
+                        ],
+                        spacing=10,
+                    ),
+                    ft.Divider(color=estilos.SOMBRA_OSCURA, height=10),
+                    *controles,
+                ],
+                spacing=10,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            ),
+            bgcolor=estilos.FONDO,
+            shadow=estilos.sombra_neu(8, 16),
+            border=ft.Border.all(1, BORDE_CLARO),
+            border_radius=24,
+            padding=20,
+        )
+
+    valor_productos = texto("0", size=20, bold=True, titulo=True)
+    valor_stock = texto("0", size=20, bold=True, titulo=True)
+    valor_marcas = texto("0", size=20, bold=True, titulo=True)
+    valor_categorias = texto("0", size=20, bold=True, titulo=True)
+
+    fila_estadisticas = ft.Row(
+        controls=[
+            tarjeta_estadistica(ft.Icons.INVENTORY_2, "Total productos", valor_productos, True),
+            tarjeta_estadistica(ft.Icons.VIEW_IN_AR, "Stock acumulado", valor_stock),
+            tarjeta_estadistica(ft.Icons.COPYRIGHT, "Marcas", valor_marcas),
+            tarjeta_estadistica(ft.Icons.LAYERS, "Categorías", valor_categorias),
+        ],
+        spacing=16,
+    )
 
     grid_productos = ft.GridView(
         expand=1,
-        max_extent=250,       
-        child_aspect_ratio=0.8, 
+        max_extent=300,
+        child_aspect_ratio=0.8,
         spacing=20,
         run_spacing=20,
+        padding=ft.Padding.only(right=14, bottom=14),
     )
+    contenedor_principal = ft.Container(
+        content=grid_productos,
+        expand=True,
+    )
+
+    tarjeta_productos = tarjeta_menu(
+        "Mostrar productos",
+        ft.Icons.GRID_VIEW,
+        [
+            boton("Mostrar productos", ft.Icons.TABLE_ROWS, lambda: mostrar(None), "primario"),
+            etiqueta("Catálogo"),
+            boton("Agregar producto", ft.Icons.ADD, lambda: agregar("producto")),
+            boton("Agregar marca", ft.Icons.COPYRIGHT, lambda: agregar("marca")),
+            boton("Agregar categoría", ft.Icons.LAYERS, lambda: agregar("categoria")),
+            boton("Agregar color", ft.Icons.PALETTE, lambda: agregar("color")),
+            etiqueta("Producto seleccionado"),
+            boton("Modificar producto", ft.Icons.EDIT, lambda: modificar()),
+            boton("Agregar stock", ft.Icons.INVENTORY, lambda: agregar_stock()),
+            boton("Eliminar producto", ft.Icons.DELETE, lambda: eliminar(), "peligro"),
+        ],
+    )
+    tarjeta_cuentas = tarjeta_menu(
+        "Mostrar cuentas de usuarios",
+        ft.Icons.PEOPLE,
+        [
+            boton("Ver cuentas", ft.Icons.PERSON_SEARCH, lambda: ver_cuentas(), "primario"),
+            boton("Agregar cuenta de administrador", ft.Icons.PERSON_ADD, lambda: agregar_administrador()),
+        ],
+    )
+    tarjeta_estadisticas = tarjeta_menu(
+        "Mostrar estadísticas",
+        ft.Icons.BAR_CHART,
+        [
+            texto("Opciones próximamente", size=12, color=estilos.TEXTO_SUAVE),
+        ],
+    )
+
     contenedor_izquierdo = ft.Container(
-        content=ft.Column(
-            controls=[
-                ft.Text("Panel de Administrador", size=30, weight="bold", color=ft.Colors.BLUE),
-                ft.Button("Agregar productos", on_click=lambda: agregar("producto")),
-                ft.Button("Agregar marca", on_click=lambda: agregar("marca")),
-                ft.Button("Agregar categoria", on_click=lambda: agregar("categoria")),
-                ft.Button("Agregar color", on_click=lambda: agregar("color")),
-                ft.Button("Eliminar productos", on_click=eliminar),
-                ft.Button("Mostrar productos", on_click=mostrar(None)),
-                ft.Button("Modificar productos", on_click=modificar),
-                ft.Button("Agregar stock", on_click=agregar_stock),
-                ft.Button("Cerrar sesión", on_click=ir_a_login),
-                #ft.Button("Consultar estadisticas", on_click=estadisticas),
-                #ft.Button("Ver historial de compras productos", on_click=historial),
-            ]
-        )
+        content=ft.ListView(
+            controls=[tarjeta_productos, tarjeta_cuentas, tarjeta_estadisticas],
+            spacing=24,
+            padding=ft.Padding.only(left=10, top=4, right=18, bottom=18),
+        ),
+        width=330,
     )
+
+    botones_header = [
+        ft.TextButton(
+            content=ft.Text("Cerrar Sesión", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE),
+            on_click=ir_a_login,
+        )
+    ]
+    botones_centro = [
+        ft.Container(
+            content=texto("ADMIN", size=10, bold=True, color=ft.Colors.WHITE),
+            bgcolor=estilos.TEXTO,
+            border_radius=20,
+            padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+        )
+    ]
+    header = estilos.construir_header(botones_header, botones_centro)
 
     mostrar(None)
 
     return [
-        ft.Row(
-            controls=[contenedor_izquierdo, grid_productos],
-            alignment=ft.MainAxisAlignment.SPACE_AROUND,
-            vertical_alignment=ft.CrossAxisAlignment.START,
+        ft.Stack(
             expand=True,
+            controls=[
+                ft.Container(
+                    content=ft.Row(
+                        controls=[
+                            contenedor_izquierdo,
+                            ft.Column(
+                                controls=[fila_estadisticas, contenedor_principal],
+                                spacing=20,
+                                expand=True,
+                            ),
+                        ],
+                        vertical_alignment=ft.CrossAxisAlignment.START,
+                        spacing=20,
+                    ),
+                    expand=True,
+                    padding=ft.Padding.only(top=100, left=20, right=20, bottom=20),
+                ),
+                header,
+            ],
         )
     ]
-

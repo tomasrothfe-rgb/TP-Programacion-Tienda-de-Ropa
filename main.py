@@ -1,17 +1,22 @@
 import flet as ft
+import estilos
 from Vistas.admin import AdminVista
 from Vistas.cliente import ClienteVista
 from Vistas.login import LoginVista
 from Vistas.compra import CompraVista
+from types import SimpleNamespace
 
 
 def main(page: ft.Page):
-    page.title = "Novus Prestige"
+    page.title = "Jupiter"
+    page.padding = 0
+    estilos.aplicar_tema(page)
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     def mostrar_login(e=None):
         page.clean()
+        page.window.maximized = True
         page.end_drawer = None
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
         page.add(*LoginVista(page, mostrar_cliente, mostrar_admin))
@@ -21,8 +26,7 @@ def main(page: ft.Page):
         page.clean()
         page.title = "Panel de Cliente"
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
-        page.window.width = 1500
-        page.window.height = 500
+        page.window.maximized = True
         page.add(*ClienteVista(page, mostrar_login, mostrar_compra, usuario))
         page.update()
 
@@ -31,8 +35,7 @@ def main(page: ft.Page):
         page.end_drawer = None
         page.title = "Finalizar compra"
         page.vertical_alignment = ft.MainAxisAlignment.START
-        page.window.width = 1500
-        page.window.height = 600
+        page.window.maximized = True
         page.add(*CompraVista(page, mostrar_cliente, usuario))
         page.update()
 
@@ -40,12 +43,15 @@ def main(page: ft.Page):
         page.clean()
         page.title = "Panel de Administrador"
         page.vertical_alignment = ft.MainAxisAlignment.CENTER
-        page.window.width = 700
-        page.window.height = 500
+        page.window.maximized = True
         page.add(*AdminVista(page, mostrar_login, usuario))
         page.update()
 
-    mostrar_login()
+   
+
+
+    usuario_prueba = SimpleNamespace(id=1, nombre="1", apellido="1", email="1", rol="admin")
+    mostrar_admin(usuario_prueba)
 
 
 ft.run(main)
