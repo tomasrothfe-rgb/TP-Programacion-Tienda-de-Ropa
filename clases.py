@@ -139,6 +139,75 @@ class Usuario():
         return mensaje
 
     @staticmethod
+    def obtener_datos(id_usuario):
+        cursor.execute("SELECT nombre, apellido, email FROM usuarios WHERE id_usuario = ?", (id_usuario,))
+        fila = cursor.fetchone()
+        if fila is None:
+            return None
+        return {"nombre": fila[0], "apellido": fila[1], "email": fila[2]}
+
+    @staticmethod
+    def modificar_datos(id_usuario, nombre, apellido, email, contrasena_actual="", contrasena_nueva=""):
+        nombre = nombre.strip()
+        apellido = apellido.strip()
+        email = email.strip()
+        contrasena_actual = contrasena_actual.strip()
+        contrasena_nueva = contrasena_nueva.strip()
+
+        if not nombre or not apellido or not email:
+            return ("ERROR AL MODIFICAR DATOS", "INGRESE TODOS LOS CAMPOS")
+        try:
+            if contrasena_nueva:
+                cursor.execute("SELECT contrasena FROM usuarios WHERE id_usuario = ?", (id_usuario,))
+                guardado = cursor.fetchone()
+                if guardado is None or not verificar_contrasena(contrasena_actual, guardado[0]):
+                    return ("ERROR AL MODIFICAR DATOS", "LA CONTRASEÑA ACTUAL ES INCORRECTA")
+                cursor.execute(
+                    "UPDATE usuarios SET nombre = ?, apellido = ?, email = ?, contrasena = ? WHERE id_usuario = ?",
+                    (nombre, apellido, email, hashear_contrasena(contrasena_nueva), id_usuario),
+                )
+            else:
+                cursor.execute(
+                    "UPDATE usuarios SET nombre = ?, apellido = ?, email = ? WHERE id_usuario = ?",
+                    (nombre, apellido, email, id_usuario),
+                )
+            conexion.commit()
+            logging.info(f"Se modificaron los datos del usuario {id_usuario}")
+            return None
+        except Exception as e:
+            conexion.rollback()
+            logging.error(f"Error al modificar datos: {e}")
+            return ("ERROR AL MODIFICAR DATOS", "EL CORREO YA ESTÁ EN USO O HUBO UN ERROR EN LA BASE DE DATOS")
+
+    @staticmethod
+    def listar_compras(id_usuario):
+        cursor.execute(
+            """
+            SELECT id_compra, metodo_pago, tipo_envio, total, fecha
+            FROM compras WHERE id_usuario = ? ORDER BY id_compra DESC
+            """,
+            (id_usuario,),
+        )
+        compras = [
+            {"id": f[0], "metodo_pago": f[1], "tipo_envio": f[2], "total": f[3], "fecha": f[4], "articulos": []}
+            for f in cursor.fetchall()
+        ]
+        for compra in compras:
+            cursor.execute(
+                """
+                SELECT categoria, marca, nombre, talle, color, cantidad, precio
+                FROM articulos_comprados WHERE id_compra = ?
+                """,
+                (compra["id"],),
+            )
+            compra["articulos"] = [
+                {"categoria": a[0], "marca": a[1], "nombre": a[2], "talle": a[3],
+                 "color": a[4], "cantidad": a[5], "precio": a[6]}
+                for a in cursor.fetchall()
+            ]
+        return compras
+
+    @staticmethod
     def listar_usuarios():
         cursor.execute("SELECT id_usuario, nombre, apellido, email, rol FROM usuarios ORDER BY id_usuario")
         return [

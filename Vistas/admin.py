@@ -146,24 +146,7 @@ def AdminVista(page, ir_a_login, usuario):
         )
 
     def ventana_de_alerta(texto_superior, erratas):
-
-        def diseño_entradas(erratas):
-                    return ft.Text(
-                        erratas,
-                    )
-
-        return page.show_dialog(
-                    ft.AlertDialog(
-                            modal=True,
-                            title=ft.Text(texto_superior),
-                            content=ft.Column(
-                                diseño_entradas(erratas)
-                            ),
-                            actions=[
-                                    ft.Button("CONFIRMAR",on_click=lambda e: page.pop_dialog()),
-                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
-                                ],
-                            actions_alignment=ft.MainAxisAlignment.END,))
+        return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
     def formulario_producto(texto_superior, datos=None):
         modificando = datos is not None

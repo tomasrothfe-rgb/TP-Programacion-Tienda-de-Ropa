@@ -59,7 +59,7 @@ def sombra_neu(distancia=8, blur=16):
     ]
 
 
-def reborde_neu(contenido, on_click=None, expand=False, width=None, height=None):
+def reborde_neu(contenido, on_click=None, expand=False):
     return ft.Container(
         content=contenido,
         bgcolor=FONDO,
@@ -68,9 +68,7 @@ def reborde_neu(contenido, on_click=None, expand=False, width=None, height=None)
         border_radius=20,
         padding=20,
         expand=expand,
-        width=width,
-        height=height,
-        ink=on_click is not None,
+        ink=on_click is not None,  
         on_click=on_click,
     )
 
@@ -167,4 +165,68 @@ def construir_footer():
         bgcolor=BLANCO,
         border=ft.Border.only(top=ft.BorderSide(1, SOMBRA_OSCURA)),
         bottom=0, left=0, right=0,   
+    )
+
+
+def ventana_de_alerta(page, titulo, descripcion, texto_boton="ACEPTAR", al_cerrar=None):
+    mayusculas = titulo.upper()
+    if "ERROR" in mayusculas:
+        icono, fondo_icono, color_icono = ft.Icons.ERROR_OUTLINE, "#FEE2E2", "#DC2626"
+    elif any(p in mayusculas for p in ("ACTUALIZADO", "REALIZADA", "REENVIADO", "EXITO", "ÉXITO")):
+        icono, fondo_icono, color_icono = ft.Icons.CHECK_CIRCLE_OUTLINE, "#DCFCE7", "#16A34A"
+    else:
+        icono, fondo_icono, color_icono = ft.Icons.INFO_OUTLINE, COLOR_CAMPO, TEXTO
+
+    def cerrar(e):
+        page.pop_dialog()
+        if al_cerrar:
+            al_cerrar()
+
+    page.show_dialog(
+        ft.AlertDialog(
+            modal=True,
+            bgcolor=FONDO,
+            shape=ft.RoundedRectangleBorder(radius=28),
+            content_padding=ft.Padding.all(32),
+            content=ft.Container(
+                width=380,
+                content=ft.Column(
+                    tight=True,
+                    spacing=14,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                    controls=[
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            controls=[
+                                ft.Container(
+                                    content=ft.Icon(icono, color=color_icono, size=32),
+                                    width=64,
+                                    height=64,
+                                    bgcolor=fondo_icono,
+                                    border_radius=20,
+                                    alignment=ft.Alignment.CENTER,
+                                )
+                            ],
+                        ),
+                        ft.Text(
+                            titulo,
+                            font_family=FUENTE_TITULO,
+                            size=20,
+                            weight=ft.FontWeight.BOLD,
+                            color=TEXTO,
+                            text_align=ft.TextAlign.CENTER,
+                        ),
+                        ft.Text(
+                            descripcion,
+                            font_family=FUENTE_TEXTO,
+                            size=14,
+                            color=TEXTO_SUAVE,
+                            text_align=ft.TextAlign.CENTER,
+                        ),
+                        ft.Container(height=6),
+                        ft.Button(texto_boton, style=boton_presionado(), on_click=cerrar),
+                    ],
+                ),
+            ),
+        )
     )

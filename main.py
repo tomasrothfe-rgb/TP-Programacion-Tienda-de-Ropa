@@ -1,5 +1,6 @@
 import flet as ft
 import estilos
+import conexion_bd
 from Vistas.admin import AdminVista
 from Vistas.cliente import ClienteVista
 from Vistas.login import LoginVista
@@ -49,6 +50,6 @@ def main(page: ft.Page):
 
 
     mostrar_login()
-
+    conexion_bd.creacion_bd()  
 
 ft.run(main)

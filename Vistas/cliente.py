@@ -8,6 +8,7 @@ from collections import defaultdict
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from clases import Inventario,Usuario,Carrito  
+from email_validator import validate_email, EmailNotValidError
 
 
 logging.basicConfig(level=logging.INFO)
@@ -21,24 +22,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         ir_a_compra(usuario)
         
     def ventana_de_alerta(texto_superior, erratas):
-
-        def diseño_entradas(erratas):
-                    return ft.Text(
-                        erratas,
-                    )
-
-        return page.show_dialog(
-                    ft.AlertDialog(
-                            modal=True,
-                            title=ft.Text(texto_superior),
-                            content=ft.Column(
-                                diseño_entradas(erratas)
-                            ),
-                            actions=[
-                                    ft.Button("CONFIRMAR",on_click=lambda e: page.pop_dialog()),
-                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
-                                ],
-                            actions_alignment=ft.MainAxisAlignment.END,))
+        return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
     def tarjeta_item_carrito(item, info):
         return ft.Container(
@@ -527,6 +511,319 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         )
 
 
+    def texto_perfil(valor, size=14, color=estilos.TEXTO, bold=False, titulo=False, **kwargs):
+        return ft.Text(
+            valor,
+            size=size,
+            color=color,
+            weight=ft.FontWeight.BOLD if bold else ft.FontWeight.NORMAL,
+            font_family=estilos.FUENTE_TITULO if titulo else estilos.FUENTE_TEXTO,
+            **kwargs,
+        )
+
+    def pantalla_perfil(controles):
+        contenedor_principal.content = ft.Row(
+            expand=True,
+            vertical_alignment=ft.CrossAxisAlignment.STRETCH,
+            controls=[
+                ft.Container(expand=2),
+                ft.Container(
+                    expand=5,
+                    content=ft.Column(
+                        expand=True,
+                        scroll=ft.ScrollMode.AUTO,
+                        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                        controls=[
+                            ft.Container(
+                                padding=30,
+                                content=ft.Column(
+                                    spacing=25,
+                                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                                    controls=controles,
+                                ),
+                            )
+                        ],
+                    ),
+                ),
+                ft.Container(expand=2),
+            ],
+        )
+        page.update()
+
+    def boton_volver_perfil():
+        return ft.TextButton(
+            content=ft.Row(
+                tight=True,
+                spacing=6,
+                controls=[
+                    ft.Icon(ft.Icons.ARROW_BACK, size=16, color=estilos.TEXTO_SUAVE),
+                    texto_perfil("Volver al perfil", color=estilos.TEXTO_SUAVE),
+                ],
+            ),
+            on_click=lambda e: mostrar_perfil(),
+        )
+
+    def opcion_perfil(icono, titulo, descripcion, accion):
+        tarjeta = estilos.reborde_neu(
+            ft.Column(
+                spacing=14,
+                horizontal_alignment=ft.CrossAxisAlignment.START,
+                controls=[
+                    ft.Container(
+                        content=ft.Icon(icono, color=estilos.FONDO, size=26),
+                        width=56,
+                        height=56,
+                        bgcolor=estilos.OSCURO,
+                        border_radius=16,
+                        alignment=ft.Alignment.CENTER,
+                    ),
+                    texto_perfil(titulo.upper(), size=18, bold=True, titulo=True),
+                    texto_perfil(descripcion, size=13, color=estilos.TEXTO_SUAVE),
+                ],
+            ),
+            on_click=lambda e: accion(),
+            expand=True,
+        )
+        tarjeta.height = 220
+        return tarjeta
+
+    def mostrar_perfil():
+        datos = Usuario.obtener_datos(usuario.id) or {"nombre": "", "apellido": "", "email": ""}
+        inicial = (datos["nombre"][:1] or "?").upper()
+
+        tarjeta_datos = estilos.reborde_neu(
+            ft.Row(
+                spacing=24,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Container(
+                        content=texto_perfil(inicial, size=34, bold=True, titulo=True, color=estilos.FONDO),
+                        width=80,
+                        height=80,
+                        bgcolor=estilos.OSCURO,
+                        border_radius=40,
+                        alignment=ft.Alignment.CENTER,
+                    ),
+                    ft.Column(
+                        spacing=2,
+                        controls=[
+                            texto_perfil("MI PERFIL", size=12, color=estilos.TEXTO_SUAVE),
+                            texto_perfil(f"{datos['nombre']} {datos['apellido']}".upper(), size=30, bold=True, titulo=True),
+                            texto_perfil(datos["email"], size=14, color=estilos.TEXTO_SUAVE),
+                        ],
+                    ),
+                ],
+            )
+        )
+        tarjeta_datos.padding = 30
+
+        pantalla_perfil([
+            tarjeta_datos,
+            ft.Row(
+                spacing=25,
+                controls=[
+                    opcion_perfil(
+                        ft.Icons.MANAGE_ACCOUNTS,
+                        "Modificar datos de la cuenta",
+                        "Cambiá tu nombre, correo o contraseña.",
+                        mostrar_modificar_datos,
+                    ),
+                    opcion_perfil(
+                        ft.Icons.RECEIPT_LONG,
+                        "Ver compras",
+                        "Revisá el historial de tus pedidos.",
+                        mostrar_compras,
+                    ),
+                ],
+            ),
+        ])
+
+    def mostrar_modificar_datos():
+        datos = Usuario.obtener_datos(usuario.id) or {"nombre": "", "apellido": "", "email": ""}
+        nombre_ref = ft.Ref[ft.TextField]()
+        apellido_ref = ft.Ref[ft.TextField]()
+        correo_ref = ft.Ref[ft.TextField]()
+        actual_ref = ft.Ref[ft.TextField]()
+        nueva_ref = ft.Ref[ft.TextField]()
+
+        def guardar():
+            nombre = (nombre_ref.current.value or "").strip()
+            apellido = (apellido_ref.current.value or "").strip()
+            correo = (correo_ref.current.value or "").strip()
+            actual = (actual_ref.current.value or "").strip()
+            nueva = (nueva_ref.current.value or "").strip()
+
+            if not nombre or not apellido or not correo:
+                ventana_de_alerta("ERROR AL MODIFICAR DATOS", "INGRESE TODOS LOS CAMPOS")
+                return
+            if not nombre.replace(" ", "").isalpha() or not apellido.replace(" ", "").isalpha():
+                ventana_de_alerta("ERROR AL MODIFICAR DATOS", "EL NOMBRE Y EL APELLIDO SOLO PUEDEN CONTENER LETRAS")
+                return
+            try:
+                correo = validate_email(correo, check_deliverability=False).normalized
+            except EmailNotValidError:
+                ventana_de_alerta("ERROR AL MODIFICAR DATOS", "INGRESE UN CORREO ELECTRÓNICO VÁLIDO")
+                return
+            if nueva and len(nueva) < 8:
+                ventana_de_alerta("ERROR AL MODIFICAR DATOS", "LA CONTRASEÑA DEBE TENER AL MENOS 8 CARACTERES")
+                return
+
+            resultado = Usuario.modificar_datos(usuario.id, nombre, apellido, correo, actual, nueva)
+            if resultado is not None:
+                ventana_de_alerta(*resultado)
+                return
+
+            usuario.nombre = nombre
+            usuario.apellido = apellido
+            usuario.email = correo
+            actual_ref.current.value = ""
+            nueva_ref.current.value = ""
+            ventana_de_alerta("DATOS ACTUALIZADOS", "TUS DATOS SE GUARDARON CORRECTAMENTE")
+            page.update()
+
+        formulario = estilos.reborde_neu(
+            ft.Column(
+                spacing=15,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                controls=[
+                    ft.Row(
+                        spacing=20,
+                        controls=[
+                            ft.Container(
+                                expand=True,
+                                content=estilos.campo_datos("Nombre", "Mario", ref=nombre_ref, value=datos["nombre"]),
+                            ),
+                            ft.Container(
+                                expand=True,
+                                content=estilos.campo_datos("Apellido", "Pérez", ref=apellido_ref, value=datos["apellido"]),
+                            ),
+                        ],
+                    ),
+                    estilos.campo_datos("Correo electrónico", "ejemplo@correo.com", ref=correo_ref, value=datos["email"]),
+                    ft.Divider(color=ft.Colors.with_opacity(0.5, ft.Colors.GREY)),
+                    texto_perfil("CAMBIAR CONTRASEÑA (OPCIONAL)", size=13, bold=True, color=estilos.TEXTO_SUAVE),
+                    ft.Row(
+                        spacing=20,
+                        controls=[
+                            ft.Container(
+                                expand=True,
+                                content=estilos.campo_datos(
+                                    "Contraseña actual", "********", ref=actual_ref,
+                                    password=True, can_reveal_password=True,
+                                ),
+                            ),
+                            ft.Container(
+                                expand=True,
+                                content=estilos.campo_datos(
+                                    "Contraseña nueva", "Mínimo 8 caracteres", ref=nueva_ref,
+                                    password=True, can_reveal_password=True,
+                                ),
+                            ),
+                        ],
+                    ),
+                    ft.Button("Guardar cambios", style=estilos.boton_presionado(), on_click=lambda e: guardar()),
+                ],
+            )
+        )
+        formulario.padding = 40
+
+        pantalla_perfil([
+            boton_volver_perfil(),
+            texto_perfil("MODIFICAR DATOS", size=40, bold=True, titulo=True),
+            formulario,
+        ])
+
+    def tarjeta_compra(compra):
+        filas = []
+        for a in compra["articulos"]:
+            filas.append(
+                ft.Container(
+                    padding=ft.Padding.symmetric(vertical=10),
+                    border=ft.Border.only(bottom=ft.BorderSide(1, ft.Colors.with_opacity(0.5, estilos.SOMBRA_OSCURA))),
+                    content=ft.Row(
+                        spacing=14,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Column(
+                                expand=True,
+                                spacing=2,
+                                controls=[
+                                    texto_perfil(a["nombre"].upper(), size=14, bold=True, titulo=True),
+                                    texto_perfil(
+                                        f"{a['categoria']} · {a['marca']} · {a['color']} / TALLE {a['talle']}".upper(),
+                                        size=11, color=estilos.TEXTO_SUAVE,
+                                    ),
+                                ],
+                            ),
+                            texto_perfil(f"{formato_precio(a['precio'])} x {a['cantidad']}", size=13, bold=True),
+                        ],
+                    ),
+                )
+            )
+
+        metodo = "TARJETA" if compra["metodo_pago"] == "tarjeta" else "TRANSFERENCIA"
+        envio = "ENVÍO A DOMICILIO" if compra["tipo_envio"] == "envio" else "RETIRO EN LOCAL"
+
+        tarjeta = estilos.reborde_neu(
+            ft.Column(
+                spacing=12,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                controls=[
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Column(
+                                spacing=2,
+                                controls=[
+                                    texto_perfil(f"ORDEN #{compra['id']}", size=20, bold=True, titulo=True),
+                                    texto_perfil(compra["fecha"], size=12, color=estilos.TEXTO_SUAVE),
+                                ],
+                            ),
+                            texto_perfil(formato_precio(compra["total"]), size=24, bold=True, titulo=True),
+                        ],
+                    ),
+                    ft.Row(
+                        spacing=8,
+                        controls=[
+                            ft.Container(
+                                content=texto_perfil(t, size=10, bold=True, color=estilos.TEXTO),
+                                bgcolor=estilos.BLANCO,
+                                border=ft.Border.all(1, estilos.SOMBRA_OSCURA),
+                                border_radius=20,
+                                padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+                            )
+                            for t in (metodo, envio)
+                        ],
+                    ),
+                    *filas,
+                ],
+            )
+        )
+        tarjeta.padding = 30
+        return tarjeta
+
+    def mostrar_compras():
+        compras = Usuario.listar_compras(usuario.id)
+        if compras:
+            contenido = [tarjeta_compra(c) for c in compras]
+        else:
+            contenido = [
+                ft.Container(
+                    padding=ft.Padding.only(top=40),
+                    alignment=ft.Alignment.CENTER,
+                    content=texto_perfil("Todavía no realizaste compras", size=18, color=estilos.TEXTO_SUAVE),
+                )
+            ]
+
+        cantidad = len(compras)
+        pantalla_perfil([
+            boton_volver_perfil(),
+            texto_perfil("MIS COMPRAS", size=40, bold=True, titulo=True),
+            texto_perfil(f"{cantidad} compra" + ("" if cantidad == 1 else "s"), size=14, color=estilos.TEXTO_SUAVE),
+            *contenido,
+        ])
+
     columna_carrito = ft.ListView(expand=True, spacing=14, padding=ft.Padding.all(24))
     total_carrito = ft.Text("$0", font_family=estilos.FUENTE_TITULO, size=26,
                             weight=ft.FontWeight.BOLD, color=estilos.TEXTO)
@@ -734,6 +1031,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
     botonera_centro=[
     ft.TextButton(content=ft.Text("Inicio", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=lambda: mostrar_inicio()),                
     ft.TextButton(content=ft.Text("Catálogo", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=lambda: mostrar_catalogo(None)),
+    ft.TextButton(content=ft.Text("Perfil", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=lambda e: mostrar_perfil()),
     ft.TextButton(content=ft.Text("Cerrar Sesión", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE), on_click=ir_a_login)]
     
     header=estilos.construir_header(carrito_boton, botonera_centro)

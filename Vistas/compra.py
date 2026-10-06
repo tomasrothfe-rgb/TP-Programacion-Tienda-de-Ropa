@@ -26,24 +26,7 @@ def CompraVista(page, ir_a_cliente, usuario):
         return "$" + f"{valor:,.0f}".replace(",", ".")
 
     def ventana_de_alerta(texto_superior, erratas):
-
-        def diseño_entradas(erratas):
-                    return ft.Text(
-                        erratas,
-                    )
-
-        return page.show_dialog(
-                    ft.AlertDialog(
-                            modal=True,
-                            title=ft.Text(texto_superior),
-                            content=ft.Column(
-                                diseño_entradas(erratas)
-                            ),
-                            actions=[
-                                    ft.Button("CONFIRMAR",on_click=lambda e: page.pop_dialog()),
-                                    ft.Button("CANCELAR", on_click=lambda e: page.pop_dialog())
-                                ],
-                            actions_alignment=ft.MainAxisAlignment.END,))
+        return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
     def etiqueta(texto):
         return ft.Text(texto.upper(), font_family=estilos.FUENTE_TEXTO, size=12,
@@ -167,17 +150,12 @@ def CompraVista(page, ir_a_cliente, usuario):
         if resultado:
             boton_comprar.disabled = True
 
-            def terminar(e):
-                page.pop_dialog()
-                ir_a_cliente(usuario)
-
-            page.show_dialog(
-                ft.AlertDialog(
-                    modal=True,
-                    title=ft.Text("COMPRA REALIZADA"),
-                    content=ft.Text(f"Tu número de orden es {resultado}"),
-                    actions=[ft.Button("VOLVER A LA TIENDA", on_click=terminar, style=estilos.boton_presionado())],
-                )
+            estilos.ventana_de_alerta(
+                page,
+                "COMPRA REALIZADA",
+                f"Tu número de orden es {resultado}",
+                "VOLVER A LA TIENDA",
+                al_cerrar=lambda: ir_a_cliente(usuario),
             )
 
     lista = carrito.listar_carrito()
@@ -448,13 +426,12 @@ def CompraVista(page, ir_a_cliente, usuario):
     actualizar_totales()
 
     boton_volver = ft.TextButton(
-        style=estilos.boton_presionado(),
         content=ft.Row(
             tight=True,
             spacing=8,
             controls=[
-                ft.Icon(ft.Icons.ARROW_BACK, size=18),
-                ft.Text("Volver a la tienda", font_family=estilos.FUENTE_TEXTO),
+                ft.Icon(ft.Icons.ARROW_BACK, size=18, color=estilos.TEXTO_SUAVE),
+                ft.Text("Volver a la tienda", font_family=estilos.FUENTE_TEXTO, color=estilos.TEXTO_SUAVE),
             ],
         ),
         on_click=lambda e: ir_a_cliente(usuario),
