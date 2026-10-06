@@ -3,21 +3,21 @@ import os
 import sys
 import estilos
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))  # Permite importar módulos de la carpeta principal
 
 from clases import Usuario, normalizar_email
 
-def LoginVista(page, ir_a_cliente, ir_a_admin):
+def LoginVista(page, ir_a_cliente, ir_a_admin):  # Arma la pantalla de login y registro
     correo_ref = ft.Ref[ft.TextField]()
     contrasena_ref = ft.Ref[ft.TextField]()
 
     login_correo = estilos.campo_datos("Correo electrónico", "ejemplo@correo.com", ref=correo_ref)
     login_contrasena = estilos.campo_datos("Contraseña", "********", ref=contrasena_ref, password=True, can_reveal_password=True)
 
-    def ventana_de_alerta(texto_superior, erratas):
+    def ventana_de_alerta(texto_superior, erratas):  # Atajo para mostrar avisos en esta pantalla
         return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
-    def ingresar_tienda(correo, contraseña):
+    def ingresar_tienda(correo, contraseña):  # Inicia sesión y abre la vista según el rol
         resultado = Usuario.iniciar_sesion(correo, contraseña)
         if resultado[0] != None:
             ventana_de_alerta(*resultado)
@@ -44,7 +44,7 @@ def LoginVista(page, ir_a_cliente, ir_a_admin):
     reg_correo = estilos.campo_datos("Correo electrónico", "ejemplo@correo.com", ref=reg_correo_ref)
     reg_contrasena = estilos.campo_datos("Contraseña", "********", ref=reg_contrasena_ref, password=True, can_reveal_password=True)
 
-    def registrar_usuario():
+    def registrar_usuario():  # Lee el formulario, registra al cliente y lo hace ingresar
         nombre = (nombre_ref.current.value or "").strip()
         apellido = (apellido_ref.current.value or "").strip()
         correo = (reg_correo_ref.current.value or "").strip()
@@ -90,7 +90,7 @@ def LoginVista(page, ir_a_cliente, ir_a_admin):
 
     container_contenido = ft.Container(content=login_view, width=700, padding=ft.Padding.only(left=30, right=30))
 
-    def cambiar_pestana(e):
+    def cambiar_pestana(e):  # Cambia entre las pestañas de login y registro
         if e.control.data == 0:
             container_contenido.content = login_view
             texto_superior.value="Inicio de Sesión"

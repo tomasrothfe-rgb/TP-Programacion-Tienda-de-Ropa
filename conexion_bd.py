@@ -3,7 +3,7 @@ import hashlib
 import os
 
 
-def creacion_bd():
+def creacion_bd():  # Crea todas las tablas y carga datos iniciales (solo si no existen)
     conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
     cursor = conexion.cursor()
     cursor.executescript('''
@@ -136,10 +136,10 @@ def creacion_bd():
         ('ERROR DE CUENTA', 'SU CUENTA SE DESACTIVO POR INACTIVIDAD');
     ''')
 
-    salt = os.urandom(16)
+    salt = os.urandom(16)  # Genera la sal para hashear la contraseña del admin por defecto
     h = hashlib.pbkdf2_hmac("sha256", "admin123".encode(), salt, 100_000)
     contrasena_hash = salt.hex() + ":" + h.hex()
-    cursor.execute(
+    cursor.execute(  # Crea el admin inicial (si ya existe, lo ignora)
         """
         INSERT OR IGNORE INTO usuarios (nombre, apellido, email, contrasena, rol)
         VALUES (?, ?, ?, ?, ?)

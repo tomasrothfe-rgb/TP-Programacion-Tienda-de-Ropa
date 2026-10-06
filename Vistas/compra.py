@@ -11,28 +11,28 @@ from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 
-COSTO_ENVIO = 15000
+COSTO_ENVIO = 15000  # Costo fijo del envío a domicilio
 TEXTO_GARANTIA = "GARANTÍA DE DEVOLUCIÓN JUPITER POR 30 DÍAS"
 VERDE = "#16A34A"
-ALTO_MAXIMO_LISTA = 340
+ALTO_MAXIMO_LISTA = 340  # Alto máximo de la lista del resumen antes de hacer scroll
 
 
-def CompraVista(page, ir_a_cliente, usuario):
+def CompraVista(page, ir_a_cliente, usuario):  # Arma la pantalla para finalizar la compra
     inventario = Inventario()
     carrito = Carrito(usuario.id)
-    estado = {"envio": "retiro", "pago": "tarjeta"}
+    estado = {"envio": "retiro", "pago": "tarjeta"}  # Opciones elegidas de envío y pago
 
-    def formato_precio(valor):
+    def formato_precio(valor):  # Formatea un número como precio ($1.500)
         return "$" + f"{valor:,.0f}".replace(",", ".")
 
-    def ventana_de_alerta(texto_superior, erratas):
+    def ventana_de_alerta(texto_superior, erratas):  # Atajo para mostrar avisos en esta pantalla
         return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
-    def etiqueta(texto):
+    def etiqueta(texto):  # Texto chico en mayúsculas para títulos de campos
         return ft.Text(texto.upper(), font_family=estilos.FUENTE_TEXTO, size=12,
                        weight=ft.FontWeight.W_600, color=estilos.TEXTO)
 
-    def campo_texto(**kwargs):
+    def campo_texto(**kwargs):  # Campo de texto con el estilo de esta pantalla
         return ft.TextField(
             bgcolor=ft.Colors.WHITE,
             filled=True,
@@ -46,10 +46,10 @@ def CompraVista(page, ir_a_cliente, usuario):
             **kwargs,
         )
 
-    def campo_con_etiqueta(texto, campo, expand=False):
+    def campo_con_etiqueta(texto, campo, expand=False):  # Campo con su etiqueta arriba
         return ft.Column(spacing=6, expand=expand, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=[etiqueta(texto), campo])
 
-    def titulo_seccion(numero, titulo, paso):
+    def titulo_seccion(numero, titulo, paso):  # Encabezado numerado de cada paso
         return ft.Row(
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -73,13 +73,13 @@ def CompraVista(page, ir_a_cliente, usuario):
             ],
         )
 
-    def divisor():
+    def divisor():  # Línea separadora
         return ft.Divider(height=10, color=ft.Colors.with_opacity(0.5, ft.Colors.GREY))
 
-    def crear_selector(opciones, inicial, al_cambiar):
+    def crear_selector(opciones, inicial, al_cambiar):  # Grupo de botones donde se elige una sola opción
         botones = {}
 
-        def pintar(actual):
+        def pintar(actual):  # Resalta la opción elegida
             for valor, (contenedor, icono, texto) in botones.items():
                 activo = valor == actual
                 contenedor.bgcolor = estilos.OSCURO if activo else ft.Colors.WHITE
@@ -87,7 +87,7 @@ def CompraVista(page, ir_a_cliente, usuario):
                 icono.color = ft.Colors.WHITE if activo else estilos.TEXTO
                 texto.color = ft.Colors.WHITE if activo else estilos.TEXTO
 
-        def elegir(valor):
+        def elegir(valor):  # Marca la opción y avisa el cambio
             pintar(valor)
             al_cambiar(valor)
 
@@ -109,7 +109,7 @@ def CompraVista(page, ir_a_cliente, usuario):
         pintar(inicial)
         return ft.Row(spacing=12, controls=[b[0] for b in botones.values()])
 
-    def caja_info(controles):
+    def caja_info(controles):  # Caja blanca para mostrar información
         return ft.Container(
             padding=20,
             bgcolor=ft.Colors.WHITE,
@@ -118,11 +118,11 @@ def CompraVista(page, ir_a_cliente, usuario):
             content=ft.Column(spacing=6, horizontal_alignment=ft.CrossAxisAlignment.STRETCH, controls=controles),
         )
 
-    def texto_info(texto, negrita=False):
+    def texto_info(texto, negrita=False):  # Texto de información, opcionalmente en negrita
         return ft.Text(texto, font_family=estilos.FUENTE_TEXTO, size=14, color=estilos.TEXTO,
                        weight=ft.FontWeight.BOLD if negrita else None)
 
-    def comprobar_comprar(e):
+    def comprobar_comprar(e):  # Valida los datos y confirma la compra
         campos_envio = [nombre_envio, apellido_envio, correo_envio, direccion_envio, ciudad_envio, codigo_envio]
         if estado["envio"] == "envio" and any(not c.value.strip() for c in campos_envio):
             ventana_de_alerta("ERROR DE ENVIO", "COMPLETE TODOS LOS DATOS")
@@ -162,7 +162,7 @@ def CompraVista(page, ir_a_cliente, usuario):
     lista_controls = []
     sub_total = 0.0
 
-    for i in lista:
+    for i in lista:  # Arma la lista del resumen y calcula el subtotal
         info = inventario.consultar_producto_especifico(i[2])
         precio = float(info["precio"])
         cantidad = int(i[5])
@@ -218,7 +218,7 @@ def CompraVista(page, ir_a_cliente, usuario):
         ),
     )
 
-    def actualizar_totales():
+    def actualizar_totales():  # Recalcula envío y total y actualiza la pantalla
         envio = COSTO_ENVIO if estado["envio"] == "envio" else 0
         total = sub_total + envio
 
@@ -231,11 +231,11 @@ def CompraVista(page, ir_a_cliente, usuario):
         contenedor_entradas.visible = estado["envio"] == "envio"
         page.update()
 
-    def cambiar_envio(valor):
+    def cambiar_envio(valor):  # Cambia entre envío a domicilio y retiro en local
         estado["envio"] = valor
         actualizar_totales()
 
-    def cambiar_metodo(valor):
+    def cambiar_metodo(valor):  # Cambia entre pago con tarjeta y transferencia
         estado["pago"] = valor
         panel_tarjeta.visible = valor == "tarjeta"
         panel_transferencia.visible = valor == "transferencia"

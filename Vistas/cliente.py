@@ -5,7 +5,7 @@ import sys
 import estilos
 from collections import defaultdict
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))  # Permite importar módulos de la carpeta principal
 
 from clases import Inventario,Usuario,Carrito  
 from email_validator import validate_email, EmailNotValidError
@@ -13,18 +13,18 @@ from email_validator import validate_email, EmailNotValidError
 
 logging.basicConfig(level=logging.INFO)
 
-def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
+def ClienteVista(page, ir_a_login, ir_a_compra, usuario):  # Arma la tienda que ve el cliente
     inventario = Inventario()
-    producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}
+    producto_seleccionado={"id":None,"color":None,"talle":None, "cantidad":None}  # Producto, color, talle y cantidad que eligió el cliente
     carrito = Carrito(usuario.id) 
 
-    def compra():
+    def compra():  # Va a la pantalla de compra
         ir_a_compra(usuario)
         
-    def ventana_de_alerta(texto_superior, erratas):
+    def ventana_de_alerta(texto_superior, erratas):  # Atajo para mostrar avisos en esta pantalla
         return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
-    def tarjeta_item_carrito(item, info):
+    def tarjeta_item_carrito(item, info):  # Tarjeta de un ítem dentro del carrito
         return ft.Container(
             padding=14,
             bgcolor="#F8FAFC",
@@ -58,7 +58,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             ),
         )
 
-    def actualizar_carrito():
+    def actualizar_carrito():  # Recarga el carrito desde la base y recalcula el total
         columna_carrito.controls.clear()
         lista = carrito.listar_carrito()
         total = 0
@@ -85,27 +85,27 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         boton_finalizar_compra.disabled = not lista
         page.update()
 
-    def abrir_carrito(e=None):
+    def abrir_carrito(e=None):  # Muestra el panel lateral del carrito
         fondo_carrito.visible = True
         panel_carrito.offset = ft.Offset(0, 0)
         page.update()
 
-    def cerrar_carrito(e=None):
+    def cerrar_carrito(e=None):  # Oculta el panel lateral del carrito
         fondo_carrito.visible = False
         panel_carrito.offset = ft.Offset(1, 0)
         page.update()
 
-    def mostrar_carrito(e=None):
+    def mostrar_carrito(e=None):  # Abre el carrito (usado por el botón del header)
         abrir_carrito()
 
-    def iniciar_compra(e=None):
+    def iniciar_compra(e=None):  # Va a la compra desde el carrito
         compra()
 
-    def eliminar_carrito(e, id):
+    def eliminar_carrito(e, id):  # Quita un ítem y recarga el carrito
         carrito.eliminar_carrito(id[0])
         actualizar_carrito()
 
-    def generar_tarjetas_incio(lista):
+    def generar_tarjetas_incio(lista):  # Arma la fila de tarjetas de la parte inferior del inicio
         tarjetas = ft.Row(
             controls=[],
             expand=True,                                      
@@ -122,7 +122,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             tarjetas.controls.append(tarjeta)
         return tarjetas
 
-    def generar_tarjetas_superior(lista):
+    def generar_tarjetas_superior(lista):  # Arma la fila de tarjetas de la parte superior del inicio
         tarjetas = ft.Row(
             controls=[],
             expand=True,                                     
@@ -142,14 +142,14 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             )
         return tarjetas
     
-    def mostrar_inicio():
+    def mostrar_inicio():  # Muestra la pantalla de inicio
         contenedor_principal.content=inicio
         page.update()
 
-    def formato_precio(valor):
+    def formato_precio(valor):  # Formatea un número como precio ($1.500)
         return "$" + f"{valor:,.0f}".replace(",", ".")
 
-    def crear_tarjeta_producto(p):
+    def crear_tarjeta_producto(p):  # Tarjeta de producto para el catálogo
         etiqueta = ft.Container(
             left=20, top=20,
             padding=ft.Padding.symmetric(horizontal=16, vertical=6),
@@ -209,7 +209,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             ),
         )
 
-    def mostrar_catalogo(categoria):
+    def mostrar_catalogo(categoria):  # Muestra el catálogo, todo o filtrado por categoría
         lista_productos = inventario.listar_productos(categoria)
         grid_productos.controls.clear()
 
@@ -225,7 +225,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         contenedor_principal.content = catalogo
         page.update()
 
-    def mostrar_producto(producto):
+    def mostrar_producto(producto):  # Muestra el detalle de un producto para elegir color, talle y cantidad
         logging.info(f"Click en el producto: {producto.nombre} (ID: {producto.id})")
         stock = inventario.listar_stock(producto.id)
         producto_seleccionado.update({"id": producto.id, "color": None, "talle": None, "cantidad": None})
@@ -245,7 +245,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         txt_stock = ft.Text("", font_family=estilos.FUENTE_TEXTO, size=13, color=estilos.TEXTO_SUAVE)
         txt_error_cantidad = ft.Text("", font_family=estilos.FUENTE_TEXTO, size=12, color=ft.Colors.RED_400)
 
-        def dibujar_colores():
+        def dibujar_colores():  # Dibuja los colores disponibles
             fila_colores.controls.clear()
             for color in agrupado:
                 elegido = producto_seleccionado["color"] == color
@@ -263,7 +263,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
                     )
                 )
 
-        def dibujar_talles():
+        def dibujar_talles():  # Dibuja los talles del color elegido
             fila_talles.controls.clear()
             talles = agrupado.get(producto_seleccionado["color"], [])
             for talle, cantidad in talles:
@@ -280,7 +280,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
                     )
                 )
 
-        def seleccion_color(color):
+        def seleccion_color(color):  # Guarda el color elegido y reinicia el talle
             producto_seleccionado["color"] = color
             producto_seleccionado["talle"] = None
             txt_color.value = color.upper()
@@ -292,7 +292,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             dibujar_talles()
             page.update()
 
-        def seleccion_talle(talle, cantidad_talle):
+        def seleccion_talle(talle, cantidad_talle):  # Guarda el talle elegido y muestra el stock
             producto_seleccionado["talle"] = (talle, cantidad_talle)
             txt_talle.value = talle
             txt_cantidad.value = "1"
@@ -304,7 +304,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             dibujar_talles()
             page.update()
 
-        def modificar_contador(delta: int):
+        def modificar_contador(delta: int):  # Suma o resta cantidad sin pasar el stock ni bajar de 1
             cantidad_disponible = producto_seleccionado["talle"][1]
             nuevo_valor = int(txt_cantidad.value) + delta
 
@@ -318,7 +318,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
 
             page.update()
 
-        def agregar():
+        def agregar():  # Agrega lo elegido al carrito; devuelve True si salió bien
             producto_seleccionado["cantidad"] = int(txt_cantidad.value)
             resultado = carrito.agregar_carrito(producto_seleccionado)
             if resultado is not None:
@@ -327,15 +327,15 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             actualizar_carrito()
             return True
 
-        def agregar_al_carrito(e=None):
+        def agregar_al_carrito(e=None):  # Agrega al carrito y lo abre
             if agregar():
                 abrir_carrito()
 
-        def comprar_ahora(e=None):
+        def comprar_ahora(e=None):  # Agrega al carrito y va directo a la compra
             if agregar():
                 compra()
 
-        def estilo_boton(fondo, texto, borde=None):
+        def estilo_boton(fondo, texto, borde=None):  # Estilo de los botones del detalle
             return ft.ButtonStyle(
                 bgcolor={ft.ControlState.DEFAULT: fondo, ft.ControlState.DISABLED: estilos.COLOR_CAMPO},
                 color={ft.ControlState.DEFAULT: texto, ft.ControlState.DISABLED: estilos.TEXTO_SUAVE},
@@ -479,7 +479,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         )
         page.update()
 
-    def menu_filtro():
+    def menu_filtro():  # Desplegable para filtrar el catálogo por categoría
         categorias = inventario.listar_elementos_producto()[0]
 
         estilo_opcion = ft.ButtonStyle(color=estilos.TEXTO)
@@ -487,7 +487,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         for c in categorias: 
             opciones += [ft.DropdownOption(key=c, text=f"FILTRAR: {c.upper()}", style=estilo_opcion)]
 
-        def al_seleccionar(e):
+        def al_seleccionar(e):  # Muestra el catálogo de la categoría elegida
             seleccion = e.control.value
             mostrar_catalogo(None if seleccion == "Todos" else seleccion)
 
@@ -511,7 +511,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         )
 
 
-    def texto_perfil(valor, size=14, color=estilos.TEXTO, bold=False, titulo=False, **kwargs):
+    def texto_perfil(valor, size=14, color=estilos.TEXTO, bold=False, titulo=False, **kwargs):  # Crea un texto con el estilo del perfil
         return ft.Text(
             valor,
             size=size,
@@ -521,7 +521,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             **kwargs,
         )
 
-    def pantalla_perfil(controles):
+    def pantalla_perfil(controles):  # Muestra una sección del perfil en el centro
         contenedor_principal.content = ft.Row(
             expand=True,
             vertical_alignment=ft.CrossAxisAlignment.STRETCH,
@@ -550,7 +550,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         )
         page.update()
 
-    def boton_volver_perfil():
+    def boton_volver_perfil():  # Botón para volver al perfil
         return ft.TextButton(
             content=ft.Row(
                 tight=True,
@@ -563,7 +563,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             on_click=lambda e: mostrar_perfil(),
         )
 
-    def opcion_perfil(icono, titulo, descripcion, accion):
+    def opcion_perfil(icono, titulo, descripcion, accion):  # Tarjeta clickeable con una opción del perfil
         tarjeta = estilos.reborde_neu(
             ft.Column(
                 spacing=14,
@@ -587,7 +587,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         tarjeta.height = 220
         return tarjeta
 
-    def mostrar_perfil():
+    def mostrar_perfil():  # Muestra los datos del usuario y sus opciones
         datos = Usuario.obtener_datos(usuario.id) or {"nombre": "", "apellido": "", "email": ""}
         inicial = (datos["nombre"][:1] or "?").upper()
 
@@ -638,7 +638,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             ),
         ])
 
-    def mostrar_modificar_datos():
+    def mostrar_modificar_datos():  # Formulario para modificar los datos personales
         datos = Usuario.obtener_datos(usuario.id) or {"nombre": "", "apellido": "", "email": ""}
         nombre_ref = ft.Ref[ft.TextField]()
         apellido_ref = ft.Ref[ft.TextField]()
@@ -646,7 +646,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         actual_ref = ft.Ref[ft.TextField]()
         nueva_ref = ft.Ref[ft.TextField]()
 
-        def guardar():
+        def guardar():  # Valida y guarda los datos nuevos
             nombre = (nombre_ref.current.value or "").strip()
             apellido = (apellido_ref.current.value or "").strip()
             correo = (correo_ref.current.value or "").strip()
@@ -733,7 +733,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
             formulario,
         ])
 
-    def tarjeta_compra(compra):
+    def tarjeta_compra(compra):  # Tarjeta con el detalle de una compra
         filas = []
         for a in compra["articulos"]:
             filas.append(
@@ -803,7 +803,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         tarjeta.padding = 30
         return tarjeta
 
-    def mostrar_compras():
+    def mostrar_compras():  # Muestra el historial de compras
         compras = Usuario.listar_compras(usuario.id)
         if compras:
             contenido = [tarjeta_compra(c) for c in compras]
@@ -939,11 +939,11 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
 
     parte_superior.padding=50
 
-    ALTO_MINIMO_INICIO = 700
+    ALTO_MINIMO_INICIO = 700  # Alto mínimo de la pantalla de inicio
     MARGEN_INICIO = 30
     RESERVADO_INICIO = 100 + 20 + 2 * MARGEN_INICIO
 
-    def alto_inicio(alto_ventana):
+    def alto_inicio(alto_ventana):  # Calcula el alto del inicio según la ventana
         return max(ALTO_MINIMO_INICIO, alto_ventana - RESERVADO_INICIO)
 
     contenido_inicio = ft.Container(
@@ -1019,7 +1019,7 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
         padding=ft.Padding.only(top=100, left=20, right=20, bottom=20)
     )
 
-    def ajustar_alto_inicio(e):
+    def ajustar_alto_inicio(e):  # Ajusta el alto del inicio al cambiar el tamaño de la ventana
         nuevo_alto = alto_inicio(e.height)
         if contenido_inicio.height != nuevo_alto:
             contenido_inicio.height = nuevo_alto
@@ -1036,12 +1036,12 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
     
     header=estilos.construir_header(carrito_boton, botonera_centro)
 
-    def revisar_alerta():
+    def revisar_alerta():  # Muestra las alertas pendientes del usuario
         mensaje = Usuario.revisar_alerta(usuario.id)
         if mensaje:
             ventana_de_alerta("AVISO", mensaje)
 
-    actualizar_carrito()
+    actualizar_carrito()  # Carga el carrito al entrar
     mostrar_inicio()
     revisar_alerta()
 
