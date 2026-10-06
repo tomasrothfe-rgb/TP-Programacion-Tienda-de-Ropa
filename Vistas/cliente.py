@@ -738,8 +738,14 @@ def ClienteVista(page, ir_a_login, ir_a_compra, usuario):
     
     header=estilos.construir_header(carrito_boton, botonera_centro)
 
+    def revisar_alerta():
+        mensaje = Usuario.revisar_alerta(usuario.id)
+        if mensaje:
+            ventana_de_alerta("AVISO", mensaje)
+
     actualizar_carrito()
     mostrar_inicio()
+    revisar_alerta()
 
     return [ft.Stack(
         expand=True,

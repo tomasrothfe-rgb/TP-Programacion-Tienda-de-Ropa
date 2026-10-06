@@ -113,6 +113,32 @@ class Usuario():
             return ("ERROR AL AGREGAR ADMINISTRADOR", "EL CORREO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
 
     @staticmethod
+    def agregar_alerta(id_usuario, mensaje, confirmar=True):
+        cursor.execute("SELECT alerta_activa FROM usuarios WHERE id_usuario = ?", (id_usuario,))
+        fila = cursor.fetchone()
+        if fila is None:
+            return
+        actual = fila[0]
+        if actual in (None, "", "0", "None"):
+            nueva = mensaje
+        else:
+            nueva = f"{actual}\n{mensaje}"
+        cursor.execute("UPDATE usuarios SET alerta_activa = ? WHERE id_usuario = ?", (nueva, id_usuario))
+        if confirmar:
+            conexion.commit()
+
+    @staticmethod
+    def revisar_alerta(id_usuario):
+        cursor.execute("SELECT alerta_activa FROM usuarios WHERE id_usuario = ?", (id_usuario,))
+        fila = cursor.fetchone()
+        if fila is None or fila[0] in (None, "", "0", "None"):
+            return None
+        mensaje = fila[0]
+        cursor.execute("UPDATE usuarios SET alerta_activa = '0' WHERE id_usuario = ?", (id_usuario,))
+        conexion.commit()
+        return mensaje
+
+    @staticmethod
     def listar_usuarios():
         cursor.execute("SELECT id_usuario, nombre, apellido, email, rol FROM usuarios ORDER BY id_usuario")
         return [
@@ -262,11 +288,52 @@ class Carrito:
 
             cursor.execute("DELETE FROM productos_carrito WHERE id_usuario = ?", (self.id_usuario,))
 
+            self._quitar_de_otros_carritos(lista, inventario)
+
             conexion.commit()
             return id_compra
         except Exception:
             conexion.rollback()
             raise
+
+    def _quitar_de_otros_carritos(self, lista, inventario):
+        for i in lista:
+            id_producto, color, talle = i[2], i[3], i[4]
+
+            cursor.execute(
+                """
+                SELECT cantidad_stock FROM stock_variantes
+                WHERE id_producto = ?
+                  AND id_talle_producto = (SELECT id_talle_producto FROM talles WHERE nombre_talle = ?)
+                  AND id_color_producto = (SELECT id_color_producto FROM colores WHERE nombre_color = ?)
+                """,
+                (id_producto, talle, color),
+            )
+            fila = cursor.fetchone()
+            restante = fila[0] if fila else 0
+
+            cursor.execute(
+                """
+                SELECT id_item, id_usuario FROM productos_carrito
+                WHERE id_producto = ? AND color = ? AND talle = ?
+                  AND id_usuario != ? AND cantidad > ?
+                """,
+                (id_producto, color, talle, self.id_usuario, restante),
+            )
+            afectados = cursor.fetchall()
+            if not afectados:
+                continue
+
+            nombre = inventario.consultar_producto_especifico(id_producto)["nombre"]
+            mensaje = (
+                f"Se quitó de tu carrito \"{nombre}\" (color {color}, talle {talle}) "
+                f"porque otra persona compró las últimas unidades."
+            )
+
+            for id_item, id_usuario in afectados:
+                cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id_item,))
+                Usuario.agregar_alerta(id_usuario, mensaje, confirmar=False)
+
 
 class Producto:
     def __init__(self, id, categoria, marca, nombre, precio, imagen):
