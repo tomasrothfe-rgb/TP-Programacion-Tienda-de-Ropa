@@ -101,7 +101,7 @@ def AdminVista(page, ir_a_login, usuario):
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ), selector
 
-    def mostrar_panel(titulo, controles, subtitulo="Formulario Eclipsis"):
+    def mostrar_panel(titulo, controles, subtitulo="Formulario Jupiter"):
         contenedor_principal.content = ft.Container(
             content=ft.Column(
                 controls=[

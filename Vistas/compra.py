@@ -269,7 +269,7 @@ def CompraVista(page, ir_a_cliente, usuario):
     )
 
     contenedor_pago_local = caja_info([
-        texto_info("ECLIPSIS TIENDA ZONA NORTE", negrita=True),
+        texto_info("JUPITER TIENDA ZONA NORTE", negrita=True),
         texto_info("Calle 9 de julio 300, Esperanza (Santa Fe). Horario de atencion de 8:00 a 20:00."),
         texto_info("El producto se retira presentado el DNI y numero de orden"),
     ])
@@ -307,8 +307,8 @@ def CompraVista(page, ir_a_cliente, usuario):
             caja_info([
                 texto_info("Datos para la transferencia", negrita=True),
                 texto_info("CBU: 0000000000000000000000"),
-                texto_info("Alias: ECLIPSIS.TIENDA"),
-                texto_info("Titular: Eclipsis Tienda"),
+                texto_info("Alias: JUPITER.TIENDA"),
+                texto_info("Titular: Jupiter Tienda"),
             ]),
         ],
     )

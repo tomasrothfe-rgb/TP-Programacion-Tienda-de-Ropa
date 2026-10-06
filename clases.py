@@ -9,7 +9,6 @@ from email_validator import validate_email, EmailNotValidError
 logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
-# SQLite no hace cumplir las claves foráneas salvo que se active en cada conexión
 conexion.execute("PRAGMA foreign_keys = ON")
 cursor = conexion.cursor()
 

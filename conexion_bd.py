@@ -144,7 +144,7 @@ def creacion_bd():
         INSERT OR IGNORE INTO usuarios (nombre, apellido, email, contrasena, rol)
         VALUES (?, ?, ?, ?, ?)
         """,
-        ("Admin", "Novus", "admin@novusprestige.com", contrasena_hash, "admin"),
+        ("Admin", "Jupiter", "admin@jupiter.com", contrasena_hash, "admin"),
     )
 
     conexion.commit()
