@@ -5,10 +5,15 @@ import os
 import re
 import shutil
 import hashlib
+from email_validator import validate_email, EmailNotValidError
 logging.basicConfig(level=logging.INFO)
 
 conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
+# SQLite no hace cumplir las claves foráneas salvo que se active en cada conexión
+conexion.execute("PRAGMA foreign_keys = ON")
 cursor = conexion.cursor()
+
+LARGO_MINIMO_CONTRASENA = 8
 
 CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"
 URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
@@ -26,6 +31,27 @@ def verificar_contrasena(contrasena, guardado):
     salt_hex, h_hex = guardado.split(":")
     h = hashlib.pbkdf2_hmac("sha256", contrasena.encode(), bytes.fromhex(salt_hex), 100_000)
     return h.hex() == h_hex
+
+def validar_datos_usuario(nombre, apellido, email, contrasena):
+    """Valida los datos de una cuenta nueva.
+    Devuelve (mensaje_de_error, None) si algo está mal, o (None, email_normalizado) si está todo bien."""
+    if not nombre or not apellido or not email or not contrasena:
+        return "INGRESE TODOS LOS CAMPOS", None
+    if not nombre.replace(" ", "").isalpha() or not apellido.replace(" ", "").isalpha():
+        return "EL NOMBRE Y EL APELLIDO SOLO PUEDEN CONTENER LETRAS", None
+    try:
+        email = validate_email(email, check_deliverability=False).normalized
+    except EmailNotValidError:
+        return "INGRESE UN CORREO ELECTRÓNICO VÁLIDO", None
+    if len(contrasena) < LARGO_MINIMO_CONTRASENA:
+        return f"LA CONTRASEÑA DEBE TENER AL MENOS {LARGO_MINIMO_CONTRASENA} CARACTERES", None
+    return None, email
+
+def normalizar_email(email):
+    try:
+        return validate_email(email, check_deliverability=False).normalized
+    except EmailNotValidError:
+        return email
 
 
 class Usuario():
@@ -73,8 +99,9 @@ class Usuario():
         email=email.strip()
         contrasena=contrasena.strip()
 
-        if not nombre or not apellido or not email or not contrasena:
-            return ("ERROR DE REGISTRO", "INGRESE TODOS LOS CAMPOS")
+        error, email = validar_datos_usuario(nombre, apellido, email, contrasena)
+        if error:
+            return ("ERROR DE REGISTRO", error)
         try:
             contrasena_hash = hashear_contrasena(contrasena)
             cursor.execute(
@@ -96,8 +123,9 @@ class Usuario():
         email=email.strip()
         contrasena=contrasena.strip()
 
-        if not nombre or not apellido or not email or not contrasena:
-            return ("ERROR AL AGREGAR ADMINISTRADOR", "INGRESE TODOS LOS CAMPOS")
+        error, email = validar_datos_usuario(nombre, apellido, email, contrasena)
+        if error:
+            return ("ERROR AL AGREGAR ADMINISTRADOR", error)
         try:
             contrasena_hash = hashear_contrasena(contrasena)
             cursor.execute(
@@ -502,7 +530,7 @@ class Inventario:
                     ?
                 )
                 """,
-                (categoria, marca, nombre_producto, precio, url_imagen),
+                (categoria, marca, nombre_producto, valor_precio, url_imagen),
             )
             id_producto = cursor.lastrowid          
             if imagen != None:
@@ -624,7 +652,7 @@ class Inventario:
     def eliminar_producto(id):
         try:
             cursor.execute(
-                "SELECT url_imagen FROM productos WHERE id_producto = ?",
+                "SELECT url_imagen, nombre_producto FROM productos WHERE id_producto = ?",
                 (id,)
             )
 
@@ -636,7 +664,26 @@ class Inventario:
                     "EL PRODUCTO NO EXISTE"
                 )
 
-            url_imagen = resultado[0]
+            url_imagen, nombre_producto = resultado
+
+            # Quitar el producto de los carritos y avisar a cada usuario afectado
+            cursor.execute(
+                "SELECT DISTINCT id_usuario FROM productos_carrito WHERE id_producto = ?",
+                (id,)
+            )
+            usuarios_afectados = [fila[0] for fila in cursor.fetchall()]
+
+            cursor.execute(
+                "DELETE FROM productos_carrito WHERE id_producto = ?",
+                (id,)
+            )
+
+            mensaje = (
+                f"Se quitó de tu carrito \"{nombre_producto}\" "
+                f"porque el producto ya no está disponible en la tienda."
+            )
+            for id_usuario in usuarios_afectados:
+                Usuario.agregar_alerta(id_usuario, mensaje, confirmar=False)
 
             cursor.execute(
                 "DELETE FROM stock_variantes WHERE id_producto = ?",
