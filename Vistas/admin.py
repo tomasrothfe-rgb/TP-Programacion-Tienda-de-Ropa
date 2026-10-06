@@ -11,16 +11,16 @@ from clases import Inventario, Usuario
 
 logging.basicConfig(level=logging.INFO)
 
-BORDE_CLARO = ft.Colors.with_opacity(0.6, ft.Colors.WHITE)
+BORDE_CLARO = ft.Colors.with_opacity(0.6, ft.Colors.WHITE)  # Color de borde claro para tarjetas
 
 
-def AdminVista(page, ir_a_login, usuario):
+def AdminVista(page, ir_a_login, usuario):  # Arma el panel de administración
 
     inventario = Inventario()
-    producto_en_seleccion = None
+    producto_en_seleccion = None  # Id del producto elegido en la grilla
     tarjeta_seleccionada_ref = None
 
-    def texto(valor, size=14, color=estilos.TEXTO, bold=False, titulo=False, **kwargs):
+    def texto(valor, size=14, color=estilos.TEXTO, bold=False, titulo=False, **kwargs):  # Crea un texto con el estilo del panel
         return ft.Text(
             valor,
             size=size,
@@ -30,10 +30,10 @@ def AdminVista(page, ir_a_login, usuario):
             **kwargs,
         )
 
-    def etiqueta(valor):
+    def etiqueta(valor):  # Texto chico en mayúsculas para secciones
         return texto(valor.upper(), size=11, color=estilos.TEXTO_SUAVE, bold=True)
 
-    def boton(contenido, icono, accion, tipo="secundario"):
+    def boton(contenido, icono, accion, tipo="secundario"):  # Botón del menú; el tipo cambia el color
         if tipo == "primario":
             fondo, color_texto, borde = estilos.TEXTO, estilos.FONDO, ft.BorderSide(1, estilos.TEXTO)
         elif tipo == "peligro":
@@ -60,7 +60,7 @@ def AdminVista(page, ir_a_login, usuario):
             ),
         )
 
-    def caja_campo(control):
+    def caja_campo(control):  # Caja con fondo para un campo
         return ft.Container(
             content=control,
             bgcolor=estilos.COLOR_CAMPO,
@@ -69,7 +69,7 @@ def AdminVista(page, ir_a_login, usuario):
             border=ft.Border.all(1, BORDE_CLARO),
         )
 
-    def campo_texto(titulo, hint="", valor=None, **kwargs):
+    def campo_texto(titulo, hint="", valor=None, **kwargs):  # Campo de texto con título; devuelve (columna, campo)
         entrada = ft.TextField(
             hint_text=hint,
             value=valor,
@@ -84,7 +84,7 @@ def AdminVista(page, ir_a_login, usuario):
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ), entrada
 
-    def campo_selector(titulo, opciones, valor, al_elegir):
+    def campo_selector(titulo, opciones, valor, al_elegir):  # Lista desplegable con título
         selector = ft.Dropdown(
             value=valor,
             hint_text="Seleccionar",
@@ -101,7 +101,7 @@ def AdminVista(page, ir_a_login, usuario):
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ), selector
 
-    def mostrar_panel(titulo, controles, subtitulo="Formulario Jupiter"):
+    def mostrar_panel(titulo, controles, subtitulo="Formulario Jupiter"):  # Reemplaza el contenido central por un formulario
         contenedor_principal.content = ft.Container(
             content=ft.Column(
                 controls=[
@@ -136,7 +136,7 @@ def AdminVista(page, ir_a_login, usuario):
         )
         page.update()
 
-    def fila_botones(funcion_confirmar, texto_confirmar="Confirmar"):
+    def fila_botones(funcion_confirmar, texto_confirmar="Confirmar"):  # Botones Cancelar y Confirmar de los formularios
         return ft.Row(
             controls=[
                 boton("Cancelar", None, lambda: mostrar(None)),
@@ -145,13 +145,13 @@ def AdminVista(page, ir_a_login, usuario):
             alignment=ft.MainAxisAlignment.END,
         )
 
-    def ventana_de_alerta(texto_superior, erratas):
+    def ventana_de_alerta(texto_superior, erratas):  # Atajo para mostrar avisos en esta pantalla
         return estilos.ventana_de_alerta(page, texto_superior, erratas)
 
-    def formulario_producto(texto_superior, datos=None):
+    def formulario_producto(texto_superior, datos=None):  # Formulario para agregar o modificar un producto
         modificando = datos is not None
 
-        async def seleccionar_archivo(e):
+        async def seleccionar_archivo(e):  # Abre el selector de archivos para elegir la imagen PNG
             files = await ft.FilePicker().pick_files(
                 allow_multiple=False,
                 allowed_extensions=["png"]
@@ -176,7 +176,7 @@ def AdminVista(page, ir_a_login, usuario):
 
             page.update()
 
-        def confirmar_click():
+        def confirmar_click():  # Valida y guarda el producto (nuevo o modificado)
             nonlocal producto_en_seleccion
             if elementos_seleccionados["categorias"] == None or elementos_seleccionados["marcas"] == None:
                 ventana_de_alerta("ELEMENTOS INCOMPLETOS", "ASEGURESE DE COMPLETAR TODOS LOS ELEMENTOS REQUERIDOS")
@@ -214,7 +214,7 @@ def AdminVista(page, ir_a_login, usuario):
             else:
                 mostrar(None)
 
-        def elegir(clave, valor):
+        def elegir(clave, valor):  # Guarda la categoría o marca elegida en el desplegable
             elementos_seleccionados[clave] = valor
 
         elementos= inventario.listar_elementos_producto()
@@ -311,15 +311,15 @@ def AdminVista(page, ir_a_login, usuario):
 
         mostrar_panel(texto_superior, controles)
 
-    def modificar():
+    def modificar():  # Abre el formulario con los datos del producto elegido
         if producto_en_seleccion is None:
             ventana_de_alerta("ERROR DE SELECCION", "NO SE SELECCIONO NINGUN PRODUCTO PARA MODIFICAR")
             return
         datos = inventario.consultar_producto_especifico(producto_en_seleccion)
         formulario_producto("MODIFICAR PRODUCTO", datos)
 
-    def eliminar():
-        def confirmar_click():
+    def eliminar():  # Pide confirmación y elimina el producto elegido
+        def confirmar_click():  # Elimina el producto y vuelve a la grilla
              nonlocal producto_en_seleccion
              retorno = inventario.eliminar_producto(producto_en_seleccion)
              if isinstance(retorno, tuple):
@@ -354,7 +354,7 @@ def AdminVista(page, ir_a_login, usuario):
                  "Confirmación",
              )
 
-    def agregar_stock(color_inicial=None):
+    def agregar_stock(color_inicial=None):  # Formulario para cargar stock por color y talle
         if not producto_en_seleccion:
             ventana_de_alerta("ERROR DE SELECCION","NO SE SELECCIONO EL PRODUCTO PARA AGREGAR STOCK")
             return
@@ -369,7 +369,7 @@ def AdminVista(page, ir_a_login, usuario):
         lista_disponibles = ft.Column(visible=False, spacing=4)
         campos_stock = {}
 
-        def confirmar_click():
+        def confirmar_click():  # Junta las cantidades ingresadas y las guarda
             if color_seleccionado is None:
                 ventana_de_alerta("ERROR DE STOCK","DEBE SELECCIONAR UN COLOR")
                 return
@@ -391,7 +391,7 @@ def AdminVista(page, ir_a_login, usuario):
             else:
                 agregar_stock(color_seleccionado)
 
-        def seleccionar_color(color):
+        def seleccionar_color(color):  # Muestra los talles y el stock actual del color elegido
             nonlocal color_seleccionado
             tabla_talles.controls.clear()
             lista_disponibles.controls.clear()
@@ -415,14 +415,15 @@ def AdminVista(page, ir_a_login, usuario):
                     ),
                     0
                 )
-
                 campo = ft.TextField(
                     width=70,
                     text_align=ft.TextAlign.CENTER,
                     text_size=13,
+                    color=estilos.TEXTO,
+                    cursor_color=estilos.TEXTO,
                     border=ft.InputBorder.NONE,
                     content_padding=8,
-                    keyboard_type=ft.KeyboardType.NUMBER
+                    keyboard_type=ft.KeyboardType.NUMBER,
                 )
 
                 campos_stock[talle] = campo
@@ -492,11 +493,11 @@ def AdminVista(page, ir_a_login, usuario):
             columna_color.controls[1].content.controls[0].value = color_inicial
             seleccionar_color(color_inicial)
 
-    def ventana_con_entradas(texto_superior,tipo, funcion):
+    def ventana_con_entradas(texto_superior,tipo, funcion):  # Formulario simple con un campo (para marca o categoría)
         columna, entrada = campo_texto(f"Nombre de la {tipo} *", tipo)
         columna.width = 420
 
-        def confirmar_click():
+        def confirmar_click():  # Llama a la función recibida con el valor ingresado
             valor_entrada=entrada.value
             retorno=funcion(valor_entrada)
             if retorno != None:
@@ -506,7 +507,7 @@ def AdminVista(page, ir_a_login, usuario):
 
         mostrar_panel(texto_superior, [columna, fila_botones(confirmar_click)])
 
-    def ventana_agregar_color(texto_superior):
+    def ventana_agregar_color(texto_superior):  # Formulario para agregar un color con selector
         color_elegido = {"hex": "#000000"}
         columna_nombre, nombre = campo_texto("Nombre del color *", "color")
         columna_nombre.width = 420
@@ -517,7 +518,7 @@ def AdminVista(page, ir_a_login, usuario):
         )
         texto_hex = texto(color_elegido["hex"], bold=True)
 
-        def al_cambiar_color(e):
+        def al_cambiar_color(e):  # Actualiza la vista previa al cambiar el color
             codigo = e.data
             if codigo is None:
                 return
@@ -531,10 +532,11 @@ def AdminVista(page, ir_a_login, usuario):
             enable_alpha=False,
             hex_input_bar=True,
             color_picker_width=300,
+            label_text_style=ft.TextStyle(color=estilos.TEXTO, weight=ft.FontWeight.W_600),
             on_color_change=al_cambiar_color,
         )
 
-        def confirmar_click():
+        def confirmar_click():  # Guarda el color nuevo
             retorno = inventario.agregar_color(nombre.value, color_elegido["hex"])
             if retorno is not None:
                 ventana_de_alerta(*retorno)
@@ -552,7 +554,7 @@ def AdminVista(page, ir_a_login, usuario):
             ],
         )
 
-    def ver_cuentas():
+    def ver_cuentas():  # Muestra la lista de cuentas registradas
         usuarios = Usuario.listar_usuarios()
         filas = []
 
@@ -612,7 +614,7 @@ def AdminVista(page, ir_a_login, usuario):
             "Usuarios",
         )
 
-    def agregar_administrador():
+    def agregar_administrador():  # Formulario para crear una cuenta de administrador
         columna_nombre, nombre = campo_texto("Nombre *", "Nombre")
         columna_apellido, apellido = campo_texto("Apellido *", "Apellido")
         columna_email, email = campo_texto("Correo *", "Correo")
@@ -622,7 +624,7 @@ def AdminVista(page, ir_a_login, usuario):
         for columna in (columna_nombre, columna_apellido, columna_email, columna_clave):
             columna.expand = True
 
-        def confirmar_click():
+        def confirmar_click():  # Crea el admin y vuelve a la lista de cuentas
             retorno = Usuario.registrar_admin(
                 nombre.value or "", apellido.value or "", email.value or "", clave.value or ""
             )
@@ -642,10 +644,10 @@ def AdminVista(page, ir_a_login, usuario):
             "Cuentas",
         )
 
-    def estilo_tarjeta(tarjeta, activa):
+    def estilo_tarjeta(tarjeta, activa):  # Resalta o quita el resaltado de una tarjeta
         tarjeta.border = ft.Border.all(2.5 if activa else 1, estilos.TEXTO if activa else BORDE_CLARO)
 
-    def cambiar_seleccion(e, id, tarjeta_container):
+    def cambiar_seleccion(e, id, tarjeta_container):  # Marca un producto como seleccionado
         nonlocal producto_en_seleccion, tarjeta_seleccionada_ref
 
         if tarjeta_seleccionada_ref is not None:
@@ -658,7 +660,7 @@ def AdminVista(page, ir_a_login, usuario):
         page.update()
         print(f"Producto seleccionado ID: {producto_en_seleccion}")
 
-    def pastilla(valor, oscura):
+    def pastilla(valor, oscura):  # Etiqueta chica redondeada
         return ft.Container(
             content=texto(
                 valor.upper(), size=10, bold=True,
@@ -671,7 +673,7 @@ def AdminVista(page, ir_a_login, usuario):
             padding=ft.Padding.symmetric(horizontal=12, vertical=4),
         )
 
-    def tarjeta_de_producto(p, stock):
+    def tarjeta_de_producto(p, stock):  # Tarjeta de producto con imagen, datos y stock
         tarjeta = ft.Container(
             content=ft.Stack(
                 controls=[
@@ -722,11 +724,11 @@ def AdminVista(page, ir_a_login, usuario):
         estilo_tarjeta(tarjeta, p.id == producto_en_seleccion)
         return tarjeta
 
-    def mostrar(producto):
-        nonlocal tarjeta_seleccionada_ref
+    def mostrar(producto):  # Carga la grilla de productos y actualiza los totales
+        nonlocal tarjeta_seleccionada_ref, grid_productos
         tarjeta_seleccionada_ref = None
         lista_productos = inventario.listar_productos(producto)
-        grid_productos.controls.clear()
+        grid_productos = nueva_grilla()  # Grilla nueva cada vez: reusar la vieja duplicaba tarjetas
         stock_total = 0
 
         for p in lista_productos:
@@ -748,7 +750,7 @@ def AdminVista(page, ir_a_login, usuario):
         contenedor_principal.content = grid_productos
         page.update()
 
-    def agregar(tipo):
+    def agregar(tipo):  # Abre el formulario según lo que se quiere agregar
         texto_superior=f"AGREGAR {tipo.upper()}"
         logging.info(f"Se desea agregar {tipo}")
         if tipo=="marca":
@@ -760,7 +762,7 @@ def AdminVista(page, ir_a_login, usuario):
         else:
             formulario_producto(texto_superior)
 
-    def tarjeta_estadistica(icono, titulo, valor, oscuro=False):
+    def tarjeta_estadistica(icono, titulo, valor, oscuro=False):  # Tarjeta con un número de resumen
         return ft.Container(
             content=ft.Row(
                 controls=[
@@ -789,7 +791,7 @@ def AdminVista(page, ir_a_login, usuario):
             expand=True,
         )
 
-    def tarjeta_menu(titulo, icono, controles):
+    def tarjeta_menu(titulo, icono, controles):  # Grupo de botones del menú lateral
         return ft.Container(
             content=ft.Column(
                 controls=[
@@ -831,14 +833,17 @@ def AdminVista(page, ir_a_login, usuario):
         spacing=16,
     )
 
-    grid_productos = ft.GridView(
-        expand=1,
-        max_extent=300,
-        child_aspect_ratio=0.8,
-        spacing=20,
-        run_spacing=20,
-        padding=ft.Padding.only(right=14, bottom=14),
-    )
+    def nueva_grilla():  # Crea la grilla de productos vacía
+        return ft.GridView(
+            expand=1,
+            max_extent=300,
+            child_aspect_ratio=0.8,
+            spacing=20,
+            run_spacing=20,
+            padding=ft.Padding.only(right=14, bottom=14),
+        )
+
+    grid_productos = nueva_grilla()
     contenedor_principal = ft.Container(
         content=grid_productos,
         expand=True,
@@ -901,7 +906,7 @@ def AdminVista(page, ir_a_login, usuario):
     ]
     header = estilos.construir_header(botones_header, botones_centro)
 
-    mostrar(None)
+    mostrar(None)  # Carga los productos al abrir el panel
 
     return [
         ft.Stack(

@@ -8,30 +8,30 @@ import hashlib
 from email_validator import validate_email, EmailNotValidError
 logging.basicConfig(level=logging.INFO)
 
-conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")
-conexion.execute("PRAGMA foreign_keys = ON")
+conexion = sql.connect("Base_de_datos_Tienda_Ropa.db")  # Conexión única a la base, compartida por todas las clases
+conexion.execute("PRAGMA foreign_keys = ON")  # Hace que SQLite respete las claves foráneas
 cursor = conexion.cursor()
 
-LARGO_MINIMO_CONTRASENA = 8
+LARGO_MINIMO_CONTRASENA = 8  # Largo mínimo exigido para las contraseñas
 
-CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"
-URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"
-def limpiar_nombre(texto):
+CARPETA_IMAGENES = "Imagenes/Imagenes_Productos"  # Carpeta donde se copian las imágenes de productos
+URL_IMAGEN_DEFAULT = f"{CARPETA_IMAGENES}/imagen_default.png"  # Imagen que se usa si el producto no tiene una propia
+def limpiar_nombre(texto):  # Reemplaza caracteres raros por _ para usar el texto en nombres de archivo
     return re.sub(r"[^\w-]", "_", texto)
 
 import hashlib
 
-def hashear_contrasena(contrasena):
+def hashear_contrasena(contrasena):  # Devuelve la contraseña hasheada con sal (formato sal:hash)
     salt = os.urandom(16)
     h = hashlib.pbkdf2_hmac("sha256", contrasena.encode(), salt, 100_000)
     return salt.hex() + ":" + h.hex()
 
-def verificar_contrasena(contrasena, guardado):
+def verificar_contrasena(contrasena, guardado):  # Compara una contraseña con el hash guardado
     salt_hex, h_hex = guardado.split(":")
     h = hashlib.pbkdf2_hmac("sha256", contrasena.encode(), bytes.fromhex(salt_hex), 100_000)
     return h.hex() == h_hex
 
-def validar_datos_usuario(nombre, apellido, email, contrasena):
+def validar_datos_usuario(nombre, apellido, email, contrasena):  # Valida los datos de una cuenta nueva; devuelve (error, email normalizado)
     """Valida los datos de una cuenta nueva.
     Devuelve (mensaje_de_error, None) si algo está mal, o (None, email_normalizado) si está todo bien."""
     if not nombre or not apellido or not email or not contrasena:
@@ -46,14 +46,14 @@ def validar_datos_usuario(nombre, apellido, email, contrasena):
         return f"LA CONTRASEÑA DEBE TENER AL MENOS {LARGO_MINIMO_CONTRASENA} CARACTERES", None
     return None, email
 
-def normalizar_email(email):
+def normalizar_email(email):  # Pasa el email a su forma estándar; si es inválido lo deja igual
     try:
         return validate_email(email, check_deliverability=False).normalized
     except EmailNotValidError:
         return email
 
 
-class Usuario():
+class Usuario():  # Datos y acciones comunes a clientes y administradores
     def __init__(self, id, nombre, apellido, email, contraseña, rol, alerta):
         self.nombre = nombre
         self.contraseña = contraseña
@@ -64,9 +64,9 @@ class Usuario():
         self.alerta = alerta
 
     @staticmethod
-    def iniciar_sesion(email, contrasena):
-        email=email.strip()
-        contrasena=contrasena.strip()
+    def iniciar_sesion(email, contrasena):  # Busca el usuario por email y verifica la contraseña; devuelve (error, usuario)
+        email=(email or "").strip()  # Si el campo quedó vacío, Flet manda None
+        contrasena=(contrasena or "").strip()
         if not email or not contrasena:
             return ("ERROR DE INICIO DE SESIÓN", "INGRESE SU CORREO Y CONTRASEÑA")
         else:
@@ -92,7 +92,7 @@ class Usuario():
                 return ("ERROR DE INICIO DE SESIÓN", "HUBO UN ERROR EN LA BASE DE DATOS")
 
     @staticmethod
-    def registrar(nombre, apellido, email, contrasena):
+    def registrar(nombre, apellido, email, contrasena):  # Crea una cuenta de cliente después de validar los datos
         nombre=nombre.strip()
         apellido=apellido.strip()
         email=email.strip()
@@ -116,7 +116,7 @@ class Usuario():
             return ("ERROR DE REGISTRO", "EL USUARIO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
 
     @staticmethod
-    def registrar_admin(nombre, apellido, email, contrasena):
+    def registrar_admin(nombre, apellido, email, contrasena):  # Crea una cuenta de administrador con las mismas validaciones
         nombre=nombre.strip()
         apellido=apellido.strip()
         email=email.strip()
@@ -140,7 +140,7 @@ class Usuario():
             return ("ERROR AL AGREGAR ADMINISTRADOR", "EL CORREO YA EXISTE O HUBO UN ERROR EN LA BASE DE DATOS")
 
     @staticmethod
-    def agregar_alerta(id_usuario, mensaje, confirmar=True):
+    def agregar_alerta(id_usuario, mensaje, confirmar=True):  # Suma un mensaje a las alertas pendientes del usuario
         cursor.execute("SELECT alerta_activa FROM usuarios WHERE id_usuario = ?", (id_usuario,))
         fila = cursor.fetchone()
         if fila is None:
@@ -155,7 +155,7 @@ class Usuario():
             conexion.commit()
 
     @staticmethod
-    def revisar_alerta(id_usuario):
+    def revisar_alerta(id_usuario):  # Devuelve las alertas pendientes y las marca como leídas
         cursor.execute("SELECT alerta_activa FROM usuarios WHERE id_usuario = ?", (id_usuario,))
         fila = cursor.fetchone()
         if fila is None or fila[0] in (None, "", "0", "None"):
@@ -166,7 +166,7 @@ class Usuario():
         return mensaje
 
     @staticmethod
-    def obtener_datos(id_usuario):
+    def obtener_datos(id_usuario):  # Devuelve nombre, apellido y email del usuario
         cursor.execute("SELECT nombre, apellido, email FROM usuarios WHERE id_usuario = ?", (id_usuario,))
         fila = cursor.fetchone()
         if fila is None:
@@ -174,7 +174,7 @@ class Usuario():
         return {"nombre": fila[0], "apellido": fila[1], "email": fila[2]}
 
     @staticmethod
-    def modificar_datos(id_usuario, nombre, apellido, email, contrasena_actual="", contrasena_nueva=""):
+    def modificar_datos(id_usuario, nombre, apellido, email, contrasena_actual="", contrasena_nueva=""):  # Actualiza los datos; si hay contraseña nueva, verifica primero la actual
         nombre = nombre.strip()
         apellido = apellido.strip()
         email = email.strip()
@@ -207,7 +207,7 @@ class Usuario():
             return ("ERROR AL MODIFICAR DATOS", "EL CORREO YA ESTÁ EN USO O HUBO UN ERROR EN LA BASE DE DATOS")
 
     @staticmethod
-    def listar_compras(id_usuario):
+    def listar_compras(id_usuario):  # Devuelve las compras del usuario con sus artículos
         cursor.execute(
             """
             SELECT id_compra, metodo_pago, tipo_envio, total, fecha
@@ -235,7 +235,7 @@ class Usuario():
         return compras
 
     @staticmethod
-    def listar_usuarios():
+    def listar_usuarios():  # Devuelve todas las cuentas registradas
         cursor.execute("SELECT id_usuario, nombre, apellido, email, rol FROM usuarios ORDER BY id_usuario")
         return [
             {"id": f[0], "nombre": f[1], "apellido": f[2], "email": f[3], "rol": f[4]}
@@ -243,7 +243,7 @@ class Usuario():
         ]
 
         
-    def __init__(self,id, nombre,apellido, email, contraseña,rol,alerta):
+    def __init__(self,id, nombre,apellido, email, contraseña,rol,alerta):  # Constructor repetido: pisa al de arriba (se puede borrar uno)
         self.nombre=nombre
         self.contraseña=contraseña
         self.email = email
@@ -252,17 +252,17 @@ class Usuario():
         self.rol=rol
         self.alerta=alerta
 
-class Admin(Usuario):
+class Admin(Usuario):  # Usuario con rol administrador
     pass
 
-class Cliente(Usuario):
+class Cliente(Usuario):  # Usuario con rol cliente
     pass
 
-class Carrito:
+class Carrito:  # Maneja el carrito de un usuario en la base
     def __init__(self, id_usuario):
         self.id_usuario = id_usuario
 
-    def listar_carrito(self):
+    def listar_carrito(self):  # Devuelve los ítems del carrito del usuario
         cursor.execute(
             """
             SELECT * FROM productos_carrito WHERE id_usuario = ?
@@ -270,7 +270,7 @@ class Carrito:
         )
         return cursor.fetchall()
 
-    def agregar_carrito(self, datos):
+    def agregar_carrito(self, datos):  # Agrega un producto o suma cantidad si ya estaba, sin pasar el stock
             cursor.execute(
                 """
                 SELECT cantidad FROM productos_carrito 
@@ -324,11 +324,11 @@ class Carrito:
                 conexion.commit()
                 return None
 
-    def eliminar_carrito(self, id):
+    def eliminar_carrito(self, id):  # Quita un ítem del carrito por su id
         cursor.execute("DELETE FROM productos_carrito WHERE id_item = ?", (id,))
         conexion.commit()
 
-    def comprar_carrito(self, datos):
+    def comprar_carrito(self, datos):  # Registra la compra, descuenta stock y vacía el carrito (todo o nada)
         lista = self.listar_carrito()
         if not lista:
             return None
@@ -392,7 +392,7 @@ class Carrito:
             conexion.rollback()
             raise
 
-    def _quitar_de_otros_carritos(self, lista, inventario):
+    def _quitar_de_otros_carritos(self, lista, inventario):  # Quita de otros carritos lo que se quedó sin stock y les avisa
         for i in lista:
             id_producto, color, talle = i[2], i[3], i[4]
 
@@ -431,7 +431,7 @@ class Carrito:
                 Usuario.agregar_alerta(id_usuario, mensaje, confirmar=False)
 
 
-class Producto:
+class Producto:  # Representa un producto del catálogo
     def __init__(self, id, categoria, marca, nombre, precio, imagen):
         self.id = id
         self.categoria = categoria
@@ -440,9 +440,9 @@ class Producto:
         self.precio= precio
         self.imagen = imagen
 
-class Inventario:
+class Inventario:  # Operaciones sobre productos, stock y elementos del catálogo
     @staticmethod
-    def consultar_producto_especifico(id):
+    def consultar_producto_especifico(id):  # Devuelve los datos de un producto por su id
         logging.info(f"Se va a mostrar el producto con id {id}")
         cursor.execute(
             """
@@ -471,7 +471,7 @@ class Inventario:
         }
 
     @staticmethod
-    def listar_productos(producto):
+    def listar_productos(producto):  # Lista todos los productos o solo los de una categoría
         consulta = """
             SELECT p.id_producto,
                 (SELECT nombre_categoria FROM categorias
@@ -501,16 +501,16 @@ class Inventario:
         return [Producto(*fila) for fila in filas]
 
     @staticmethod
-    def agregar_producto(categoria, marca, nombre_producto, precio, imagen):
+    def agregar_producto(categoria, marca, nombre_producto, precio, imagen):  # Valida y guarda un producto nuevo; copia la imagen si hay
         
         url_imagen = URL_IMAGEN_DEFAULT
 
-        nombre_producto = nombre_producto.strip()
+        nombre_producto = (nombre_producto or "").strip()  # None si el campo quedó vacío
         if not nombre_producto:
             return ("NOMBRE INVÁLIDO", "INGRESE UN NOMBRE PARA EL PRODUCTO")
 
         try:
-            valor_precio = float(precio.replace(",", "."))
+            valor_precio = float(str(precio or "").replace(",", "."))
             if valor_precio <= 0:
                 raise ValueError
         except ValueError:
@@ -560,7 +560,7 @@ class Inventario:
         return id_producto 
 
     @staticmethod
-    def modificar_producto(id,categoria,marca,nombre,precio,url):
+    def modificar_producto(id,categoria,marca,nombre,precio,url):  # Modifica un producto; si cambia la imagen, reemplaza el archivo
         logging.info(f"{id},{categoria},{marca},{nombre},{precio},{url}")
  
         nombre = nombre.strip()
@@ -648,7 +648,7 @@ class Inventario:
         return None
          
     @staticmethod
-    def eliminar_producto(id):
+    def eliminar_producto(id):  # Borra el producto, lo saca de los carritos y avisa a esos usuarios
         try:
             cursor.execute(
                 "SELECT url_imagen, nombre_producto FROM productos WHERE id_producto = ?",
@@ -717,7 +717,7 @@ class Inventario:
             )
 
     @staticmethod
-    def agregar_stock(datos):
+    def agregar_stock(datos):  # Suma stock por talle y color; crea la variante si no existe
         try:
             cursor = conexion.cursor()
 
@@ -783,7 +783,7 @@ class Inventario:
             return ("ERROR AL INGRESAR STOCK","ASEGURESE DE INGRESAR BIEN LOS DATOS DE STOCK")
         
     @staticmethod
-    def listar_stock(id_producto, solo_disponibles=True):
+    def listar_stock(id_producto, solo_disponibles=True):  # Devuelve el stock por talle y color de un producto
         logging.info(f"Se va a mostrar el stock del producto {id_producto}")
 
         condicion = "AND s.cantidad_stock > 0" if solo_disponibles else ""
@@ -813,9 +813,12 @@ class Inventario:
         return {"diccionario": lista_diccionario}
 
     @staticmethod
-    def agregar_categoria(nombre):
+    def agregar_categoria(nombre):  # Agrega una categoría nueva
+        nombre = (nombre or "").strip()  # Evita None y nombres con solo espacios
+        if not nombre:
+            return ("ERROR AL AGREGAR CATEGORÍA", "INGRESE UN NOMBRE")
         try:
-            cursor.execute("INSERT INTO categorias (nombre_categoria) VALUES (?)", (nombre.strip(),))
+            cursor.execute("INSERT INTO categorias (nombre_categoria) VALUES (?)", (nombre,))
             conexion.commit()
             logging.info(f"Se insertó la categoría {nombre}")
             return None
@@ -825,9 +828,12 @@ class Inventario:
             return ("ERROR AL AGREGAR CATEGORÍA", "ASEGURESE DE QUE LA CATEGORIA NO EXISTA EN LA BASE DE DATOS")
         
     @staticmethod
-    def agregar_marca(nombre):
+    def agregar_marca(nombre):  # Agrega una marca nueva
+        nombre = (nombre or "").strip()  # Evita None y nombres con solo espacios
+        if not nombre:
+            return ("ERROR AL AGREGAR MARCA", "INGRESE UN NOMBRE")
         try:
-            cursor.execute("INSERT INTO marcas (nombre_marca) VALUES (?)", (nombre.strip(),))
+            cursor.execute("INSERT INTO marcas (nombre_marca) VALUES (?)", (nombre,))
             conexion.commit()
             logging.info(f"Se insertó la marca {nombre}")
             return None
@@ -837,7 +843,7 @@ class Inventario:
             return ("ERROR AL AGREGAR MARCA", "ASEGURESE DE QUE LA MARCA NO EXISTA EN LA BASE DE DATOS")
 
     @staticmethod
-    def agregar_color(nombre, codigo_hex):
+    def agregar_color(nombre, codigo_hex):  # Agrega un color nuevo con su código hexadecimal
         if not nombre or not nombre.strip():
             return ("ERROR AL AGREGAR COLOR", "EL COLOR DEBE TENER UN NOMBRE")
         codigo = codigo_hex
@@ -857,9 +863,12 @@ class Inventario:
             return ("ERROR AL AGREGAR COLOR", "ASEGURESE DE QUE EL COLOR NO EXISTA EN LA BASE DE DATOS")
 
     @staticmethod
-    def agregar_talle(nombre):
+    def agregar_talle(nombre):  # Agrega un talle nuevo
+        nombre = (nombre or "").strip()  # Evita None y nombres con solo espacios
+        if not nombre:
+            return ("ERROR AL AGREGAR TALLE", "INGRESE UN NOMBRE")
         try:
-            cursor.execute("INSERT INTO talles (nombre_talle) VALUES (?)", (nombre.strip(),))
+            cursor.execute("INSERT INTO talles (nombre_talle) VALUES (?)", (nombre,))
             conexion.commit()
             logging.info(f"Se insertó el talle {nombre}")
             return None
@@ -869,7 +878,7 @@ class Inventario:
             return ("ERROR AL AGREGAR TALLE", "ASEGURESE DE QUE EL TALLE NO EXISTA EN LA BASE DE DATOS")
 
     @staticmethod
-    def listar_elementos_producto():
+    def listar_elementos_producto():  # Devuelve las listas de categorías y marcas
         logging.info("Se van a mostrar los elementos para un producto")
 
         cursor.execute("SELECT nombre_categoria FROM categorias")
@@ -880,11 +889,11 @@ class Inventario:
 
         return [categorias, marcas]
     @staticmethod
-    def listar_colores():
+    def listar_colores():  # Devuelve los nombres de todos los colores
         cursor.execute("SELECT nombre_color FROM colores ORDER BY id_color_producto")
         return [fila[0] for fila in cursor.fetchall()]
 
     @staticmethod
-    def listar_talles():
+    def listar_talles():  # Devuelve los nombres de todos los talles
         cursor.execute("SELECT nombre_talle FROM talles ORDER BY id_talle_producto")
         return [fila[0] for fila in cursor.fetchall()]

@@ -1,17 +1,17 @@
 import flet as ft
-FONDO = "#EBF0F5"
-TEXTO = "#111827"
-TEXTO_SUAVE = "#6B7280"
-OSCURO = "#0D1117"
-BLANCO = "#FFFFFF"
-SOMBRA_OSCURA = "#D1D9E6"
-SOMBRA_CLARA = "#FFFFFF"
-COLOR_CAMPO = "#E3E9F0"
-FUENTE_TEXTO = "Inter"
-FUENTE_TITULO = "Space Grotesk"
+FONDO = "#EBF0F5"  # Color de fondo general
+TEXTO = "#111827"  # Color de texto principal
+TEXTO_SUAVE = "#6B7280"  # Color de texto secundario (gris)
+OSCURO = "#0D1117"  # Color oscuro para botones y detalles
+BLANCO = "#FFFFFF"  # Blanco
+SOMBRA_OSCURA = "#D1D9E6"  # Sombra oscura del efecto neumórfico
+SOMBRA_CLARA = "#FFFFFF"  # Sombra clara del efecto neumórfico
+COLOR_CAMPO = "#E3E9F0"  # Fondo de los campos de texto
+FUENTE_TEXTO = "Inter"  # Fuente para textos comunes
+FUENTE_TITULO = "Space Grotesk"  # Fuente para títulos
 
 
-def aplicar_tema(page: ft.Page):
+def aplicar_tema(page: ft.Page):  # Aplica colores y fuentes a toda la app
     page.bgcolor = FONDO
     page.fonts = {
         "Inter": "https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
@@ -22,7 +22,7 @@ def aplicar_tema(page: ft.Page):
         color_scheme=ft.ColorScheme(primary=OSCURO, on_primary=BLANCO, surface=FONDO),
     )
 
-def boton_no_presionado():
+def boton_no_presionado():  # Estilo de botón inactivo (claro)
     return ft.ButtonStyle(
         color=TEXTO_SUAVE,                      
         bgcolor=FONDO,                    
@@ -31,7 +31,7 @@ def boton_no_presionado():
         overlay_color=ft.Colors.TRANSPARENT, 
     )
 
-def boton_presionado():
+def boton_presionado():  # Estilo de botón activo (oscuro)
     return ft.ButtonStyle(
         color=FONDO,                      
         bgcolor=TEXTO,                    
@@ -40,7 +40,7 @@ def boton_presionado():
         overlay_color=ft.Colors.TRANSPARENT,  
     )
 
-def campo_datos(titulo, ejemplo, **kwargs): 
+def campo_datos(titulo, ejemplo, **kwargs):  # Campo de texto con título arriba y estilo neumórfico
     return ft.Container(
         content=ft.Column(
             [
@@ -52,14 +52,14 @@ def campo_datos(titulo, ejemplo, **kwargs):
     )
         
 
-def sombra_neu(distancia=8, blur=16):
+def sombra_neu(distancia=8, blur=16):  # Devuelve las dos sombras del efecto neumórfico
     return [
         ft.BoxShadow(blur_radius=blur, offset=ft.Offset(distancia, distancia), color=SOMBRA_OSCURA),
         ft.BoxShadow(blur_radius=blur, offset=ft.Offset(-distancia, -distancia), color=SOMBRA_CLARA),
     ]
 
 
-def reborde_neu(contenido, on_click=None, expand=False):
+def reborde_neu(contenido, on_click=None, expand=False):  # Envuelve un control en una caja con sombra neumórfica
     return ft.Container(
         content=contenido,
         bgcolor=FONDO,
@@ -73,7 +73,7 @@ def reborde_neu(contenido, on_click=None, expand=False):
     )
 
 
-def tarjeta_glassmorph(titulo_superior, titulo, descripcion):
+def tarjeta_glassmorph(titulo_superior, titulo, descripcion):  # Tarjeta translúcida (efecto vidrio) sobre una imagen
     return  ft.Container(
         content=ft.Column(
             [
@@ -118,7 +118,7 @@ def tarjeta_glassmorph(titulo_superior, titulo, descripcion):
     )
 
 
-def construir_header(botones=None, botones_centro=None):
+def construir_header(botones=None, botones_centro=None):  # Barra superior con logo y botones a la izquierda, centro y derecha
     izquierda = ft.Row(
         controls=[
             ft.Image(src="Imagenes/Imagenes_UI/jupiter_logo.png"),
@@ -152,7 +152,7 @@ def construir_header(botones=None, botones_centro=None):
         bgcolor=ft.Colors.with_opacity(0.7, FONDO),
     )
 
-def construir_footer():
+def construir_footer():  # Barra inferior con el copyright
     return ft.Container(
         content=ft.Row(
             controls=[
@@ -168,7 +168,7 @@ def construir_footer():
     )
 
 
-def ventana_de_alerta(page, titulo, descripcion, texto_boton="ACEPTAR", al_cerrar=None):
+def ventana_de_alerta(page, titulo, descripcion, texto_boton="ACEPTAR", al_cerrar=None):  # Muestra un aviso emergente; el ícono cambia según sea error, éxito o info
     mayusculas = titulo.upper()
     if "ERROR" in mayusculas:
         icono, fondo_icono, color_icono = ft.Icons.ERROR_OUTLINE, "#FEE2E2", "#DC2626"
@@ -177,7 +177,7 @@ def ventana_de_alerta(page, titulo, descripcion, texto_boton="ACEPTAR", al_cerra
     else:
         icono, fondo_icono, color_icono = ft.Icons.INFO_OUTLINE, COLOR_CAMPO, TEXTO
 
-    def cerrar(e):
+    def cerrar(e):  # Cierra el aviso y ejecuta la acción opcional al cerrar
         page.pop_dialog()
         if al_cerrar:
             al_cerrar()
