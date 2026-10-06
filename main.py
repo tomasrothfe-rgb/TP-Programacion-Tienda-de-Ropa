@@ -47,11 +47,8 @@ def main(page: ft.Page):
         page.add(*AdminVista(page, mostrar_login, usuario))
         page.update()
 
-   
 
-
-    usuario_prueba = SimpleNamespace(id=1, nombre="1", apellido="1", email="1", rol="admin")
-    mostrar_admin(usuario_prueba)
+    mostrar_login()
 
 
 ft.run(main)
